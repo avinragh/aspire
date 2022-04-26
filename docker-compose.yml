@@ -1,0 +1,29 @@
+version: "3.7"
+services:
+  postgresql:
+    image: postgres:9.5-alpine
+    healthcheck:
+      test: [ "CMD", "pg_isready", "-q", "-d", "postgres", "-U", "root" ]
+      timeout: 45s
+      interval: 10s
+      retries: 10
+    restart: always
+    environment:
+      - POSTGRES_USER=root
+      - POSTGRES_PASSWORD=password
+    ports:
+      - 5432:5432
+    volumes:
+      - ./scripts/db:/docker-entrypoint-initdb.d/
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file: .env
+    restart: on-failure
+    depends_on:
+      - postgresql
+    networks:
+      - default
+    ports:
+    - 8080:8080

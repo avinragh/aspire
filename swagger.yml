@@ -1,0 +1,90 @@
+swagger: "2.0"
+info:
+  description: "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters."
+  version: "1.0.0"
+  title: "Swagger Petstore"
+  termsOfService: "http://swagger.io/terms/"
+  contact:
+    email: "apiteam@swagger.io"
+  license:
+    name: "Apache 2.0"
+    url: "http://www.apache.org/licenses/LICENSE-2.0.html"
+host: "petstore.swagger.io"
+basePath: "/v1"
+tags:
+- name: "loan"
+  description: "Everything about your Pets"
+  externalDocs:
+    description: "Find out more"
+    url: "http://swagger.io"
+- name: "installment"
+  description: "Access to Petstore orders"
+schemes:
+- "https"
+- "http"
+paths:
+  /loan:
+    post:
+      tags:
+      - "loan"
+      summary: "Add a new loan"
+      description: ""
+      operationId: "addLoan"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "body"
+        description: "Loan Object that needs to be added"
+        required: true
+        schema:
+          $ref: "#/definitions/Loan"
+      responses:
+        "405":
+          description: "Invalid input"
+definitions:
+  Loan:
+    type: object
+    required:
+      - id
+      - amount
+      - term
+    properties:
+      id:
+        type: integer
+        format: int64
+      amount: 
+        type: integer
+        format: float64
+      term:
+        type: integer
+        format: int
+      currency:
+        type: string
+      state:
+        type: string
+      userId:
+        type: integer
+        format: int64
+  
+  Installment:
+    type: object
+    required:
+      - id
+      - installmentAmount
+      - dueDate
+    properties:
+      id:
+        type: integer
+        format: int64
+      installmentAmount:
+        type: integer
+        format: float64
+      dueDate:
+        type: string
+        format: date
+      state:
+        type: string
+
