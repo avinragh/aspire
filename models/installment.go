@@ -43,6 +43,9 @@ type Installment struct {
 	// Format: date-time
 	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty"`
 
+	// repayment amount
+	RepaymentAmount int64 `json:"repaymentAmount,omitempty"`
+
 	// state
 	State string `json:"state,omitempty"`
 }

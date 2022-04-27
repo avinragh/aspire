@@ -39,6 +39,6 @@ func (db *DB) AddInstallment(loan *models.Loan) (*models.Loan, error) {
 	return &models.Loan{}, nil
 }
 
-func (db *DB) DeleteInstallment(id string) (*models.Loan, error) {
+func (db *DB) DeleteInstallments(id string) (*models.Loan, error) {
 	return &models.Loan{}, nil
 }

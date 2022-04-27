@@ -13,19 +13,13 @@ import (
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
 	// (GET /Loans)
-	FindLoans(w http.ResponseWriter, r *http.Request, params string)
+	LoanById(w http.ResponseWriter, r *http.Request)
 
 	// (POST /Loans)
-	AddLoans(w http.ResponseWriter, r *http.Request)
+	AddLoan(w http.ResponseWriter, r *http.Request)
 
 	// (DELETE /Loans/{id})
-	DeleteLoan(w http.ResponseWriter, r *http.Request, id string)
-
-	// (GET /Loans/{id})
-	FindLoanById(w http.ResponseWriter, r *http.Request, id int32)
-
-	// (POST /Accounts/{id})
-	AddLoanById(w http.ResponseWriter, r *http.Request, id string)
+	UpdateLoan(w http.ResponseWriter, r *http.Request)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -84,7 +78,10 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	// 	r.Get(options.BaseURL+"/Loans", wrapper.FindLoans)
 	// })
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/Loans", wrapper.AddLoans)
+		r.Post(options.BaseURL+"/Signup", wrapper.Signup)
+	})
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/Loans", wrapper.AddLoan)
 	})
 	// r.Group(func(r chi.Router) {
 	// 	r.Delete(options.BaseURL+"/Loans/{id}", wrapper.DeleteLoan)

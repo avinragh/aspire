@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/davecgh/go-spew v1.1.1
 	github.com/deepmap/oapi-codegen v1.10.1
+	github.com/dgrijalva/jwt-go v3.2.0+incompatible
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-openapi/errors v0.20.2
 	github.com/go-openapi/strfmt v0.21.2
@@ -12,6 +13,7 @@ require (
 	github.com/go-openapi/validate v0.21.0
 	github.com/lib/pq v1.10.5
 	github.com/streadway/amqp v1.0.0
+	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 )
 
 require (
