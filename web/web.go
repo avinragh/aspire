@@ -83,9 +83,9 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	// r.Group(func(r chi.Router) {
 	// 	r.Get(options.BaseURL+"/Loans", wrapper.FindLoans)
 	// })
-	// r.Group(func(r chi.Router) {
-	// 	r.Post(options.BaseURL+"/Loans", wrapper.Loans)
-	// })
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/Loans", wrapper.AddLoans)
+	})
 	// r.Group(func(r chi.Router) {
 	// 	r.Delete(options.BaseURL+"/Loans/{id}", wrapper.DeleteLoan)
 	// })

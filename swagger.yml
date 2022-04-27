@@ -68,6 +68,15 @@ definitions:
       userId:
         type: integer
         format: int64
+      createdOn:
+        type: string
+        format: date-time
+      startDate:
+        type: string
+        format: date-time
+      modifiedOn: 
+        type: string
+        format: date-time
   
   Installment:
     type: object
@@ -82,9 +91,22 @@ definitions:
       installmentAmount:
         type: integer
         format: float64
+      repaymentAmount:
+        type: integer
+        format: float64
       dueDate:
         type: string
-        format: date
+        format: date-time
       state:
         type: string
+      loanId:
+        type: integer
+        format: int64
+      createdOn:
+        type: string
+        format: date-time
+      modifiedOn:
+        type: string
+        format: date-time
+
 

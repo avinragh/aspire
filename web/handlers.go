@@ -1,10 +1,13 @@
 package web
 
 import (
+	"aspire/models"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/go-chi/chi/v5"
 )
@@ -36,6 +39,47 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(server); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			logger.Println(err)
+			return
+		}
+
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(r.Context()))
+}
+
+func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Request) {
+	ctx := siw.GetContext()
+	logger := ctx.GetLogger()
+
+	database := ctx.GetDB()
+
+	loan := &models.Loan{}
+
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	spew.Dump(string(reqBody))
+	err := json.Unmarshal(reqBody, &loan)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Println(err)
+		return
+	}
+	loan, err = database.AddLoan(loan)
+	if err != nil {
+		w.WriteHeader(http.StatusConflict)
+		logger.Println(err)
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(loan); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Println(err)
 			return

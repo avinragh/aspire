@@ -19,10 +19,14 @@ import (
 // swagger:model Installment
 type Installment struct {
 
+	// created on
+	// Format: date-time
+	CreatedOn strfmt.DateTime `json:"createdOn,omitempty"`
+
 	// due date
 	// Required: true
-	// Format: date
-	DueDate *strfmt.Date `json:"dueDate"`
+	// Format: date-time
+	DueDate *strfmt.DateTime `json:"dueDate"`
 
 	// id
 	// Required: true
@@ -32,6 +36,13 @@ type Installment struct {
 	// Required: true
 	InstallmentAmount *int64 `json:"installmentAmount"`
 
+	// loan Id
+	LoanID int64 `json:"loanId,omitempty"`
+
+	// modified on
+	// Format: date-time
+	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty"`
+
 	// state
 	State string `json:"state,omitempty"`
 }
@@ -39,6 +50,10 @@ type Installment struct {
 // Validate validates this installment
 func (m *Installment) Validate(formats strfmt.Registry) error {
 	var res []error
+
+	if err := m.validateCreatedOn(formats); err != nil {
+		res = append(res, err)
+	}
 
 	if err := m.validateDueDate(formats); err != nil {
 		res = append(res, err)
@@ -52,9 +67,25 @@ func (m *Installment) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
+	if err := m.validateModifiedOn(formats); err != nil {
+		res = append(res, err)
+	}
+
 	if len(res) > 0 {
 		return errors.CompositeValidationError(res...)
 	}
+	return nil
+}
+
+func (m *Installment) validateCreatedOn(formats strfmt.Registry) error {
+	if swag.IsZero(m.CreatedOn) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("createdOn", "body", "date-time", m.CreatedOn.String(), formats); err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -64,7 +95,7 @@ func (m *Installment) validateDueDate(formats strfmt.Registry) error {
 		return err
 	}
 
-	if err := validate.FormatOf("dueDate", "body", "date", m.DueDate.String(), formats); err != nil {
+	if err := validate.FormatOf("dueDate", "body", "date-time", m.DueDate.String(), formats); err != nil {
 		return err
 	}
 
@@ -83,6 +114,18 @@ func (m *Installment) validateID(formats strfmt.Registry) error {
 func (m *Installment) validateInstallmentAmount(formats strfmt.Registry) error {
 
 	if err := validate.Required("installmentAmount", "body", m.InstallmentAmount); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Installment) validateModifiedOn(formats strfmt.Registry) error {
+	if swag.IsZero(m.ModifiedOn) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("modifiedOn", "body", "date-time", m.ModifiedOn.String(), formats); err != nil {
 		return err
 	}
 
