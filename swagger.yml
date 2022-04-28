@@ -67,16 +67,22 @@ definitions:
         type: string
       userId:
         type: integer
+        x-go-custom-tag: json:"user_id"
         format: int64
       createdOn:
         type: string
         format: date-time
+        x-go-custom-tag: json:"created_on"
+      modifiedOn:
+        type: string
+        format: date-time
+        x-go-custom-tag: json:"modified_on"
       startDate:
         type: string
         format: date-time
-      modifiedOn: 
-        type: string
-        format: date-time
+        x-go-custom-tag: json:"start_date"
+
+
   
   Installment:
     type: object
@@ -102,12 +108,15 @@ definitions:
       loanId:
         type: integer
         format: int64
+        x-go-custom-tag: json:"loan_id"
       createdOn:
         type: string
         format: date-time
+        x-go-custom-tag: json:"created_on"
       modifiedOn:
         type: string
         format: date-time
+        x-go-custom-tag: json:"modified_on"
 
   User:
     type: object
@@ -129,10 +138,38 @@ definitions:
       createdOn:
         type: string
         format: date-time
+        x-go-custom-tag: json:"created_on"
       modifiedOn:
         type: string
         format: date-time
+        x-go-custom-tag: json:"modified_on"
       password:
         type: string
+  
+  Authentication:
+    type: object
+    required:
+      - email
+      - password
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+
+  Token:
+    type: object
+    required: 
+      - email
+      - tokenString
+    properties:
+      email: 
+        type: string
+      role:
+        type: string
+      tokenString:
+        type: string
+
+
 
 

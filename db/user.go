@@ -2,6 +2,7 @@ package db
 
 import (
 	"aspire/models"
+	"log"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -10,9 +11,10 @@ import (
 func (db *DB) FindUserByEmail(email string) (*models.User, error) {
 	user := &models.User{}
 	sqlFindByEmail := `
-			SELECT id,username,password,email,role,createdOn,modifiedOn FROM users WHERE email=$1`
-	err := db.QueryRow(sqlFindByEmail, email).Scan(user.ID, user.Username, user.Password, user.Email, user.Role, user.CreatedOn, user.ModifiedOn)
+			SELECT id,username,password,email,role,created_on,modified_on FROM users WHERE email=$1`
+	err := db.QueryRow(sqlFindByEmail, email).Scan(&user.ID, &user.Username, &user.Password, &user.Email, &user.Role, &user.CreatedOn, &user.ModifiedOn)
 	if err != nil {
+		log.Println(err)
 		return nil, err
 	}
 	return user, nil
@@ -21,7 +23,7 @@ func (db *DB) FindUserByEmail(email string) (*models.User, error) {
 func (db *DB) AddUser(user *models.User) (*models.User, error) {
 	currentDate := strfmt.DateTime(time.Now())
 	sqlInsert := `
-		INSERT INTO users(username,password,email,role,createdOn,modifiedOn)
+		INSERT INTO users(username,password,email,role,created_on,modified_on)
 		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id`
 	var id int64

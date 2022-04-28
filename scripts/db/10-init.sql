@@ -8,8 +8,9 @@ CREATE TABLE if NOT EXISTS users (
     email varchar(225) not null unique,
     username varchar(225),
     password varchar(225) not null,
-    createdOn timestamp,
-    modifiedOn timestamp
+    role varchar(20),
+    created_on timestamp,
+    modified_on timestamp
 );
 
 CREATE TABLE IF NOT EXISTS loans (
@@ -18,25 +19,25 @@ CREATE TABLE IF NOT EXISTS loans (
     currency VARCHAR(4),
     term INT NOT NULL,
     state VARCHAR(10),
-    starDate TIMESTAMP,
-    createdOn TIMESTAMP,
-    modifiedOn TIMESTAMP,
-    userId INT,
+    start_date TIMESTAMP,
+    created_on TIMESTAMP,
+    modified_on TIMESTAMP,
+    user_id INT,
     CONSTRAINT fk_user
-        FOREIGN KEY(userId)
+        FOREIGN KEY(user_id)
             REFERENCES users(id)
 
 );
 CREATE TABLE IF NOT EXISTS installments (
     id SERIAL PRIMARY KEY,
-    installmentAmount DECIMAL NOT NULL,
-    dueDate TIMESTAMP,
+    installment_amount DECIMAL NOT NULL,
+    due_date TIMESTAMP,
     state VARCHAR(10),
-    loanId INT,
-    createdOn TIMESTAMP,
-    modifiedOn TIMESTAMP,
+    loan_id INT,
+    created_on TIMESTAMP,
+    modified_on TIMESTAMP,
     CONSTRAINT fk_loan
-        FOREIGN KEY(loanId)
+        FOREIGN KEY(loan_id)
             REFERENCES loans(id)
 
 );

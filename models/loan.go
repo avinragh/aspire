@@ -25,7 +25,7 @@ type Loan struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty"`
+	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" json:"created_on"`
 
 	// currency
 	Currency string `json:"currency,omitempty"`
@@ -36,11 +36,11 @@ type Loan struct {
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" json:"modified_on"`
 
 	// start date
 	// Format: date-time
-	StartDate strfmt.DateTime `json:"startDate,omitempty"`
+	StartDate strfmt.DateTime `json:"startDate,omitempty" json:"start_date"`
 
 	// state
 	State string `json:"state,omitempty"`
@@ -50,7 +50,7 @@ type Loan struct {
 	Term *int64 `json:"term"`
 
 	// user Id
-	UserID int64 `json:"userId,omitempty"`
+	UserID int64 `json:"userId,omitempty" json:"user_id"`
 }
 
 // Validate validates this loan
