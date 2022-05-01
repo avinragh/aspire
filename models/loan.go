@@ -21,7 +21,7 @@ type Loan struct {
 
 	// amount
 	// Required: true
-	Amount *int64 `json:"amount"`
+	Amount *float64 `json:"amount"`
 
 	// created on
 	// Format: date-time

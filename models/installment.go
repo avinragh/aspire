@@ -34,17 +34,21 @@ type Installment struct {
 
 	// installment amount
 	// Required: true
-	InstallmentAmount *int64 `json:"installmentAmount"`
+	InstallmentAmount *float64 `json:"installmentAmount"`
 
 	// loan Id
-	LoanID int64 `json:"loanId,omitempty" json:"loan_id"`
+	LoanID int64 `json:"loanId,omitempty"`
 
 	// modified on
 	// Format: date-time
 	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" json:"modified_on"`
 
 	// repayment amount
-	RepaymentAmount int64 `json:"repaymentAmount,omitempty"`
+	RepaymentAmount float64 `json:"repaymentAmount,omitempty"`
+
+	// repayment time
+	// Format: date-time
+	RepaymentTime strfmt.DateTime `json:"repaymentTime,omitempty" json:repayment_time"`
 
 	// state
 	State string `json:"state,omitempty"`
@@ -71,6 +75,10 @@ func (m *Installment) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateModifiedOn(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRepaymentTime(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -129,6 +137,18 @@ func (m *Installment) validateModifiedOn(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("modifiedOn", "body", "date-time", m.ModifiedOn.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Installment) validateRepaymentTime(formats strfmt.Registry) error {
+	if swag.IsZero(m.RepaymentTime) { // not required
+		return nil
+	}
+
+	if err := validate.FormatOf("repaymentTime", "body", "date-time", m.RepaymentTime.String(), formats); err != nil {
 		return err
 	}
 

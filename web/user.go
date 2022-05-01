@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 
-	"github.com/davecgh/go-spew/spew"
 	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -29,7 +29,6 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 		logger.Println(err)
 		return
 	}
-	spew.Dump(user)
 
 	_, err = database.FindUserByEmail(*user.Email)
 	if err != nil && err == sql.ErrNoRows {
@@ -45,7 +44,6 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 			logger.Println(err)
 			return
 		}
-		spew.Dump(user)
 
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(user)
@@ -121,7 +119,7 @@ func GenerateJWT(userId int64, role string) (string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	claims := token.Claims.(jwt.MapClaims)
 	claims["authorized"] = true
-	claims["userId"] = string(userId)
+	claims["userId"] = strconv.FormatInt(userId, 10)
 	claims["role"] = role
 	claims["exp"] = time.Now().Add(time.Minute * 90).Unix()
 

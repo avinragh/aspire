@@ -13,6 +13,7 @@ require (
 	github.com/go-openapi/validate v0.21.0
 	github.com/lib/pq v1.10.5
 	github.com/streadway/amqp v1.0.0
+	github.com/stretchr/testify v1.7.1
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4
 )
 
@@ -31,8 +32,12 @@ require (
 	github.com/mailru/easyjson v0.7.7 // indirect
 	github.com/mitchellh/mapstructure v1.4.1 // indirect
 	github.com/oklog/ulid v1.3.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/robfig/cron v1.2.0 // indirect
+	github.com/robfig/cron/v3 v3.0.0 // indirect
 	go.mongodb.org/mongo-driver v1.7.5 // indirect
 	golang.org/x/net v0.0.0-20220418201149-a630d4f3e7a2 // indirect
 	golang.org/x/text v0.3.7 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20210107192922-496545a6307b // indirect
 )

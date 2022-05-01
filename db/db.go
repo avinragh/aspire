@@ -1,6 +1,7 @@
 package db
 
 import (
+	"aspire/constants"
 	"aspire/util"
 	"database/sql"
 	"fmt"
@@ -9,22 +10,19 @@ import (
 	_ "github.com/lib/pq"
 )
 
-const (
-	HOST = "localhost"
-	PORT = "5432"
-)
-
 type DB struct {
 	*sql.DB
 }
 
 func Init() (*DB, error) {
-	username := util.GetEnvOrDefaultString("DB_USERNAME", "avinragh")
-	password := util.GetEnvOrDefaultString("DB_PASSWORD", "toor")
-	database := util.GetEnvOrDefaultString("DB_DATABASE", "aspire")
+	username := util.GetEnvOrDefaultString(constants.EnvDbUsername, constants.DbUsername)
+	password := util.GetEnvOrDefaultString(constants.EnvDbPassword, constants.DbPassword)
+	database := util.GetEnvOrDefaultString(constants.EnvDbDatabase, constants.DbDatabase)
+	host := util.GetEnvOrDefaultString(constants.EnvDbHost, constants.DbHost)
+	port := util.GetEnvOrDefaultString(constants.EnvDbPort, constants.DbPort)
 
 	connectionString := fmt.Sprintf("port=%s host=%s user=%s password=%s dbname=%s sslmode=disable",
-		PORT, HOST, username, password, database)
+		port, host, username, password, database)
 	db, err := sql.Open("postgres", connectionString)
 	if err != nil {
 		return nil, err

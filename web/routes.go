@@ -11,7 +11,7 @@ import (
 func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiServerOptions) http.Handler {
 	r := options.BaseRouter
 
-	middlewares := []MiddlewareFunc{IsAuthorized}
+	middlewares := []MiddlewareFunc{}
 
 	options.Middlewares = middlewares
 
@@ -35,8 +35,9 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1"+"/Login", wrapper.Login)
 	})
+
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1"+"/Loans", wrapper.AddLoan)
+		r.Post(options.BaseURL+"/v1"+"/Loans", IsAuthorized(wrapper.AddLoan))
 	})
 	// r.Group(func(r chi.Router) {
 	// 	r.Delete(options.BaseURL+"/Loans/{id}", wrapper.DeleteLoan)

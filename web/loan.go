@@ -3,12 +3,14 @@ package web
 import (
 	"aspire/constants"
 	"aspire/models"
+	"aspire/util"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/go-chi/chi/v5"
 )
@@ -36,7 +38,7 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 
 	database := ctx.GetDB()
 
-	server, err := database.FindLoanById(idInt)
+	loan, err := database.FindLoanById(idInt)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -44,7 +46,7 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(server); err != nil {
+		if err := json.NewEncoder(w).Encode(loan); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Println(err)
 			return
@@ -60,10 +62,9 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 }
 
 func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Request) {
+
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
-
-	database := ctx.GetDB()
 
 	loan := &models.Loan{}
 
@@ -79,7 +80,16 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 	}
 	loan.State = constants.LoanStatusPending
 
-	loan, err = database.AddLoan(loan, 1)
+	userIdString := r.Context().Value(ContextUserIdKey).(string)
+
+	userId, err := strconv.ParseInt(userIdString, 16, 64)
+	database := ctx.GetDB()
+
+	spew.Dump("Hey")
+	spew.Dump(userIdString)
+	spew.Dump(userId)
+
+	loan, err = database.AddLoan(loan, userId)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 		logger.Println(err)
@@ -87,6 +97,7 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 	}
 
 	var handler = func(w http.ResponseWriter, r *http.Request) {
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(loan); err != nil {
@@ -96,17 +107,18 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 		}
 
 	}
-
 	for _, middleware := range siw.HandlerMiddlewares {
 		handler = middleware(handler)
+
 	}
 
 	handler(w, r.WithContext(r.Context()))
 }
 
-/*func (siw *ServerInterfaceWrapper) UpdateLoan(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Request) {
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
+	database := ctx.GetDB()
 
 	logger.Println("In Find Server By id")
 
@@ -119,35 +131,45 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	database := ctx.GetDB()
+	idInt, err := strconv.ParseInt(id, 10, 64)
 
+	//check user role. Allow only if admin
+	userRole := r.Context().Value(ContextRoleKey).(string)
 
-	if loan.Currency == "" {
-		loan.Currency = "USD"
-	}
-	loan.State = constants.LoanStatusPending
+	var handler = func(w http.ResponseWriter, r *http.Request) {}
 
-	loan, err = database.AddLoan(loan)
-	if err != nil {
-		w.WriteHeader(http.StatusConflict)
-		logger.Println(err)
-		return
-	}
-
-	var handler = func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(loan); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			logger.Println(err)
+	if userRole == constants.RoleAdmin {
+		loan, err := database.FindLoanById(idInt)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Loan not found:"), http.StatusBadRequest)
 			return
 		}
 
-	}
+		installments := util.GetInstallments(idInt, *loan.Amount, *loan.Term)
+		database.ApproveLoan(idInt, installments)
 
+		handler = func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if err := json.NewEncoder(w).Encode(loan); err != nil {
+				w.WriteHeader(http.StatusBadRequest)
+				logger.Println(err)
+				return
+
+			}
+		}
+
+	} else {
+		handler = func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusForbidden)
+			return
+		}
+	}
 	for _, middleware := range siw.HandlerMiddlewares {
 		handler = middleware(handler)
 	}
 
 	handler(w, r.WithContext(r.Context()))
-}*/
+
+}

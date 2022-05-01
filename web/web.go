@@ -8,10 +8,18 @@ import (
 
 	"aspire/context"
 
-	packContext "context"
+	packcontext "context"
 
+	"github.com/davecgh/go-spew/spew"
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-chi/chi/v5"
+)
+
+type ContextKey string
+
+const (
+	ContextUserIdKey ContextKey = "userId"
+	ContextRoleKey   ContextKey = "role"
 )
 
 // ServerInterface represents all server handlers.
@@ -71,8 +79,10 @@ func HandlerFromMuxWithBaseURL(ctx *context.Context, si ServerInterface, r chi.R
 	})
 }
 
-func IsAuthorized(handler http.HandlerFunc) http.HandlerFunc {
+func IsAuthorized(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+
+		spew.Dump("Middleware Operating")
 
 		if r.Header["Token"] == nil {
 			err := errors.New("No Token Found")
@@ -90,23 +100,24 @@ func IsAuthorized(handler http.HandlerFunc) http.HandlerFunc {
 		})
 
 		if err != nil {
-			err := errors.New("Your Token has been expired")
+			err = errors.New("Your Token has been expired")
 			json.NewEncoder(w).Encode(err)
 			return
 		}
 
 		if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
-			userId := claims["userId"]
-			role := claims["role"]
+			userId := claims["userId"].(string)
+			role := claims["role"].(string)
 
-			ctx := packContext.WithValue(r.Context(), "userId", userId)
-			ctx = packContext.WithValue(ctx, "role", role)
+			ctx := packcontext.WithValue(r.Context(), ContextUserIdKey, userId)
+			ctx = packcontext.WithValue(ctx, ContextRoleKey, role)
 
-			r = r.WithContext(ctx)
+			next.ServeHTTP(w, r.WithContext(ctx))
+			return
 
-			handler.ServeHTTP(w, r)
 		}
 		err = errors.New("Not Authorized")
 		json.NewEncoder(w).Encode(err)
+
 	}
 }
