@@ -6,7 +6,10 @@ import (
 	"aspire/util"
 	"context"
 	"database/sql"
+	"errors"
+	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -23,23 +26,122 @@ func (db *DB) FindLoanById(id int64) (*models.Loan, error) {
 	return loan, nil
 }
 
-func (db *DB) FindLoans(userId *int64) ([]*models.Loan, error) {
+func (db *DB) FindLoans(userId *int64, state string, sort string, limit int64, page int64) ([]*models.Loan, error) {
 	loans := []*models.Loan{}
+	if sort == "" {
+		sort = "createdOn.desc"
+	}
+	var columnKey, operatorKey, columnName, operator string
+
+	sortKeys := strings.Split(sort, ".")
+	if len(sortKeys) == 2 {
+		columnKey = sortKeys[0]
+		operatorKey = sortKeys[1]
+	} else {
+		return nil, errors.New("sort value not proper")
+	}
+
+	switch columnKey {
+	case "createdOn":
+		columnName = "created_on"
+		break
+	case "amount":
+		columnName = "amount"
+		break
+	case "term":
+		columnName = "term"
+		break
+	case "state":
+		columnName = "state"
+	case "startDate":
+		columnName = "start_date"
+
+	}
+
+	switch operatorKey {
+	case "asc":
+		operator = "ASC"
+	case "desc":
+		operator = "DESC"
+	}
+
+	sortClause := fmt.Sprintf("ORDER BY %s %s", columnName, operator)
+
 	sqlFind := `
 		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans`
 	sqlFindByUser := `
 		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans where user_id=$1`
+	sqlFindByStatus := `
+		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans where state=$1`
+	sqlFindByUserAndStatus := `
+		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans where user_id=$1 and state=$2`
 	var rows *sql.Rows
 	var err error
 	if userId != nil {
-		rows, err = db.Query(sqlFindByUser, *userId)
-		if err != nil {
-			return nil, err
+		if state != "" {
+			sqlFindByUserAndStatus = sqlFindByUserAndStatus + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByUserAndStatus = sqlFindByUserAndStatus + " " + "LIMIT $3 " + "OFFSET $4"
+				rows, err = db.Query(sqlFindByUserAndStatus, *userId, state, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+
+			} else {
+				rows, err = db.Query(sqlFindByUserAndStatus, *userId, state)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+		} else {
+			sqlFindByUser = sqlFindByUser + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByUser = sqlFindByUser + " " + "LIMIT $2 " + "OFFSET $3"
+				rows, err = db.Query(sqlFindByUser, *userId, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+
+			} else {
+				rows, err = db.Query(sqlFindByUser, *userId)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 	} else {
-		rows, err = db.Query(sqlFind)
-		if err != nil {
-			return nil, err
+		if state != "" {
+			sqlFindByStatus = sqlFindByStatus + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByStatus = sqlFindByStatus + " " + "LIMIT $2 " + "OFFSET $3"
+				rows, err = db.Query(sqlFindByStatus, state, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+
+			} else {
+				rows, err = db.Query(sqlFindByStatus, state)
+				if err != nil {
+					return nil, err
+				}
+			}
+
+		} else {
+			sqlFind = sqlFind + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFind = sqlFind + " " + "LIMIT $1 " + "OFFFSET $2"
+				rows, err = db.Query(sqlFind, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+
+			} else {
+				rows, err = db.Query(sqlFind)
+				if err != nil {
+					return nil, err
+				}
+			}
 		}
 
 	}

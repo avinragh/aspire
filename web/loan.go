@@ -173,3 +173,52 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 	handler(w, r.WithContext(r.Context()))
 
 }
+
+// func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Request) {
+
+// 	ctx := siw.GetContext()
+
+// 	database := ctx.GetDB()
+
+// 	logger := ctx.GetLogger()
+
+// 	loans := []*models.Loan{}
+
+// 	var err error
+
+// 	// Parameter object where we will unmarshal all parameters from the context
+// 	var params models.FindLoansParams
+
+// 	// ------------- Optional query parameter "username" -------------
+// 	if paramValue := r.URL.Query().Get("username"); paramValue != "" {
+// 		logger.Printf("%v", paramValue)
+// 	}
+
+// 	err = runtime.BindQueryParameter("form", true, false, "username", r.URL.Query(), &params.Username)
+// 	if err != nil {
+// 		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	accounts, err = database.FindAccounts(params.Username)
+// 	if err != nil {
+// 		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
+// 		return
+// 	}
+
+// 	var handler = func(w http.ResponseWriter, r *http.Request) {
+// 		w.Header().Set("Content-Type", "application/json")
+// 		w.WriteHeader(http.StatusOK)
+// 		if err := json.NewEncoder(w).Encode(accounts); err != nil {
+// 			w.WriteHeader(http.StatusBadRequest)
+// 			logger.Println(err)
+// 			return
+// 		}
+// 	}
+
+// 	for _, middleware := range siw.HandlerMiddlewares {
+// 		handler = middleware(handler)
+// 	}
+
+// 	handler(w, r.WithContext(r.Context()))
+// }

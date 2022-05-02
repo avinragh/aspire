@@ -8,12 +8,12 @@ import (
 func UpdatePaidLoans(ctx *context.Context) {
 	logger := ctx.GetLogger()
 	database := ctx.GetDB()
-	loans, err := database.FindLoans(nil)
+	loans, err := database.FindLoans(nil, "", "", 0, 0)
 	if err != nil {
 		logger.Println(err)
 	}
 	for _, loan := range loans {
-		installments, err := database.FindInstallments(loan.ID)
+		installments, err := database.FindInstallments(loan.ID, "", "", 0, 0)
 		if err != nil {
 			logger.Println(err)
 		}

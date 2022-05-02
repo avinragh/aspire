@@ -20,25 +20,46 @@ func (db *DB) FindInstallmentById(id string) (*models.Installment, error) {
 	return installment, nil
 }
 
-func (db *DB) FindInstallments(loanId *int64) ([]*models.Installment, error) {
+func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit int64, page int64) ([]*models.Installment, error) {
 	installments := []*models.Installment{}
+
 	sqlFind := `
 		SELECT id,installment_amount,due_date,state,loan_id,repayment_date,created_on,modified_on from installments`
 	sqlFindByLoan := `
 		SELECT id,installment_amount,due_date,state,loan_id,repayment_date,created_on,modified_on from installments where user_id=$1`
+	sqlFindByState := `
+		SELECT id,installment_amount,due_date,state,loan_id,repayment_date,created_on,modified_on from installments where state=$1`
+	sqlFindByLoanAndState := `
+	SELECT id,installment_amount,due_date,state,loan_id,repayment_date,created_on,modified_on from installments where user_id=$1 and state=$2`
 	var rows *sql.Rows
 	var err error
+
 	if loanId != nil {
-		rows, err = db.Query(sqlFindByLoan, *loanId)
-		if err != nil {
-			return nil, err
+		if state != "" {
+			rows, err = db.Query(sqlFindByLoanAndState, *loanId, state)
+			if err != nil {
+				return nil, err
+			}
+
+		} else {
+			rows, err = db.Query(sqlFindByLoan, *loanId)
+			if err != nil {
+				return nil, err
+			}
 		}
 	} else {
-		rows, err = db.Query(sqlFind)
-		if err != nil {
-			return nil, err
-		}
+		if state != "" {
+			rows, err = db.Query(sqlFindByState, *loanId)
+			if err != nil {
+				return nil, err
+			}
 
+		} else {
+			rows, err = db.Query(sqlFind)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 	defer rows.Close()
 	for rows.Next() {
