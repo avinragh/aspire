@@ -173,6 +173,22 @@ definitions:
       tokenString:
         type: string
 
+  FindLoansParams:
+    type: object
+    properties:
+      userId:
+        type: string
+      state:
+        type: string
+      sort:
+        type: string
+      limit:
+        type: string
+      page:
+        type: string
+
+  
+
 
 
 

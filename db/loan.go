@@ -4,11 +4,9 @@ import (
 	"aspire/constants"
 	"aspire/models"
 	"aspire/util"
-	"context"
 	"database/sql"
 	"errors"
 	"fmt"
-	"log"
 	"strings"
 	"time"
 
@@ -26,7 +24,7 @@ func (db *DB) FindLoanById(id int64) (*models.Loan, error) {
 	return loan, nil
 }
 
-func (db *DB) FindLoans(userId *int64, state string, sort string, limit int64, page int64) ([]*models.Loan, error) {
+func (db *DB) FindLoans(userId int64, state string, sort string, limit int64, page int64) ([]*models.Loan, error) {
 	loans := []*models.Loan{}
 	if sort == "" {
 		sort = "createdOn.desc"
@@ -77,18 +75,18 @@ func (db *DB) FindLoans(userId *int64, state string, sort string, limit int64, p
 		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans where user_id=$1 and state=$2`
 	var rows *sql.Rows
 	var err error
-	if userId != nil {
+	if userId != 0 {
 		if state != "" {
 			sqlFindByUserAndStatus = sqlFindByUserAndStatus + " " + sortClause
 			if limit != 0 && page != 0 {
 				sqlFindByUserAndStatus = sqlFindByUserAndStatus + " " + "LIMIT $3 " + "OFFSET $4"
-				rows, err = db.Query(sqlFindByUserAndStatus, *userId, state, limit, page*limit)
+				rows, err = db.Query(sqlFindByUserAndStatus, userId, state, limit, page*limit)
 				if err != nil {
 					return nil, err
 				}
 
 			} else {
-				rows, err = db.Query(sqlFindByUserAndStatus, *userId, state)
+				rows, err = db.Query(sqlFindByUserAndStatus, userId, state)
 				if err != nil {
 					return nil, err
 				}
@@ -98,13 +96,13 @@ func (db *DB) FindLoans(userId *int64, state string, sort string, limit int64, p
 			sqlFindByUser = sqlFindByUser + " " + sortClause
 			if limit != 0 && page != 0 {
 				sqlFindByUser = sqlFindByUser + " " + "LIMIT $2 " + "OFFSET $3"
-				rows, err = db.Query(sqlFindByUser, *userId, limit, page*limit)
+				rows, err = db.Query(sqlFindByUser, userId, limit, page*limit)
 				if err != nil {
 					return nil, err
 				}
 
 			} else {
-				rows, err = db.Query(sqlFindByUser, *userId)
+				rows, err = db.Query(sqlFindByUser, userId)
 				if err != nil {
 					return nil, err
 				}
@@ -181,34 +179,9 @@ func (db *DB) ApproveLoan(loanId int64, installments []*models.Installment) erro
 		UPDATE loans
 		SET state = $1, modifiedOn = $2, startDate = $3
 		WHERE id= $4;`
-	sqlInsert := `
-		INSERT INTO installments(installment_amount,due_date,state,loan_id,created_on,modified_on)
-		VALUES ($1, $2, $3, $4, $5)`
 
 	currentTime := time.Now().UTC()
-	ctx := context.Background()
-	tx, err := db.BeginTx(ctx, nil)
-	if err != nil {
-		log.Fatal(err)
-	}
-	_, err = tx.ExecContext(ctx, sqlUpdate, constants.LoanStatusApproved, strfmt.DateTime(currentTime), strfmt.DateTime(util.GetDate(currentTime)), loanId)
-	if err != nil {
-		tx.Rollback()
-		return err
-	}
-
-	for _, installment := range installments {
-		installment.CreatedOn = strfmt.DateTime(currentTime)
-		installment.ModifiedOn = strfmt.DateTime(currentTime)
-		_, err = tx.ExecContext(ctx, sqlInsert, installment.InstallmentAmount, installment.DueDate, installment.State, loanId, installment.CreatedOn, installment.ModifiedOn)
-		if err != nil {
-			tx.Rollback()
-			return err
-		}
-
-	}
-
-	err = tx.Commit()
+	_, err := db.Exec(sqlUpdate, constants.LoanStatusApproved, strfmt.DateTime(currentTime), strfmt.DateTime(util.GetDate(currentTime)), loanId)
 	if err != nil {
 		return err
 	}

@@ -145,17 +145,23 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 			return
 		}
 
-		installments := util.GetInstallments(idInt, *loan.Amount, *loan.Term)
-		database.ApproveLoan(idInt, installments)
-
-		handler = func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusOK)
-			if err := json.NewEncoder(w).Encode(loan); err != nil {
-				w.WriteHeader(http.StatusBadRequest)
-				logger.Println(err)
+		if loan.State == constants.LoanStatusPending {
+			installments := util.GetInstallments(idInt, *loan.Amount, *loan.Term)
+			err = database.ApproveLoan(idInt, installments)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Could not Aprrove Loan: %s", err), http.StatusInternalServerError)
 				return
+			}
 
+			handler = func(w http.ResponseWriter, r *http.Request) {
+				w.Header().Set("Content-Type", "application/json")
+				w.WriteHeader(http.StatusOK)
+				if err := json.NewEncoder(w).Encode(loan); err != nil {
+					w.WriteHeader(http.StatusBadRequest)
+					logger.Println(err)
+					return
+
+				}
 			}
 		}
 
@@ -174,51 +180,128 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 
 }
 
-// func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Request) {
 
-// 	ctx := siw.GetContext()
+	ctx := siw.GetContext()
 
-// 	database := ctx.GetDB()
+	database := ctx.GetDB()
 
-// 	logger := ctx.GetLogger()
+	logger := ctx.GetLogger()
 
-// 	loans := []*models.Loan{}
+	loans := []*models.Loan{}
 
-// 	var err error
+	var err error
 
-// 	// Parameter object where we will unmarshal all parameters from the context
-// 	var params models.FindLoansParams
+	// Parameter object where we will unmarshal all parameters from the context
+	var params models.FindLoansParams
 
-// 	// ------------- Optional query parameter "username" -------------
-// 	if paramValue := r.URL.Query().Get("username"); paramValue != "" {
-// 		logger.Printf("%v", paramValue)
-// 	}
+	// ------------- Optional query parameter "userId" -------------
+	if paramValue := r.URL.Query().Get("userId"); paramValue != "" {
+		logger.Printf("%v", paramValue)
+	}
 
-// 	err = runtime.BindQueryParameter("form", true, false, "username", r.URL.Query(), &params.Username)
-// 	if err != nil {
-// 		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
-// 		return
-// 	}
+	err = runtime.BindQueryParameter("form", true, false, "userId", r.URL.Query(), &params.UserID)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter userId: %s", err), http.StatusBadRequest)
+		return
+	}
 
-// 	accounts, err = database.FindAccounts(params.Username)
-// 	if err != nil {
-// 		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
-// 		return
-// 	}
+	if paramValue := r.URL.Query().Get("state"); paramValue != "" {
+		logger.Printf("%v", paramValue)
+	}
 
-// 	var handler = func(w http.ResponseWriter, r *http.Request) {
-// 		w.Header().Set("Content-Type", "application/json")
-// 		w.WriteHeader(http.StatusOK)
-// 		if err := json.NewEncoder(w).Encode(accounts); err != nil {
-// 			w.WriteHeader(http.StatusBadRequest)
-// 			logger.Println(err)
-// 			return
-// 		}
-// 	}
+	err = runtime.BindQueryParameter("form", true, false, "state", r.URL.Query(), &params.State)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter state: %s", err), http.StatusBadRequest)
+		return
+	}
 
-// 	for _, middleware := range siw.HandlerMiddlewares {
-// 		handler = middleware(handler)
-// 	}
+	if paramValue := r.URL.Query().Get("sort"); paramValue != "" {
+		logger.Printf("%v", paramValue)
+	}
 
-// 	handler(w, r.WithContext(r.Context()))
-// }
+	err = runtime.BindQueryParameter("form", true, false, "sort", r.URL.Query(), &params.Sort)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter sort: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	if paramValue := r.URL.Query().Get("limit"); paramValue != "" {
+		logger.Printf("%v", paramValue)
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter limit: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	if paramValue := r.URL.Query().Get("page"); paramValue != "" {
+		logger.Printf("%v", paramValue)
+	}
+
+	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter page: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	userRole := r.Context().Value(ContextRoleKey).(string)
+	userId := r.Context().Value(ContextUserIdKey).(string)
+
+	var userIdInt int64
+
+	if userRole == constants.RoleAdmin {
+		if params.UserID != "" {
+			userIdInt, err = strconv.ParseInt(params.UserID, 10, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid parameter UserId: %s", err), http.StatusBadRequest)
+				return
+			}
+		}
+	} else if userRole == constants.RoleUser {
+		userIdInt, err = strconv.ParseInt(userId, 10, 64)
+		if err != nil {
+			http.Error(w, fmt.Sprintf("Cannot determine userId: %s", err), http.StatusInternalServerError)
+			return
+		}
+	}
+
+	var limit, page int64
+
+	if params.Limit != "" {
+		if params.Page != "" {
+			limit, err = strconv.ParseInt(params.Limit, 10, 64)
+			if err != nil {
+				http.Error(w, fmt.Sprintf("Invalid parameter limit: %s", err), http.StatusBadRequest)
+				return
+			}
+		} else {
+			http.Error(w, "Cannot have limit wothout page", http.StatusBadRequest)
+			return
+		}
+		page, err = strconv.ParseInt(params.Page, 10, 64)
+	}
+
+	loans, err = database.FindLoans(userIdInt, params.State, params.Sort, limit, page)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(loans); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			logger.Println(err)
+			return
+		}
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(r.Context()))
+}

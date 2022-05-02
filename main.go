@@ -19,8 +19,11 @@ func main() {
 	defer ctx.GetDB().Close()
 
 	c := cron.New()
-	c.AddFunc("@hourly", func() {
+	c.AddFunc("*/1 * * * *", func() {
 		crons.UpdatePaidLoans(ctx)
+	})
+	c.AddFunc("*/1 * * * *", func() {
+		crons.InsertInstallments(ctx)
 	})
 	c.Start()
 

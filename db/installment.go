@@ -4,6 +4,9 @@ import (
 	"aspire/constants"
 	"aspire/models"
 	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
 	"time"
 
 	"github.com/go-openapi/strfmt"
@@ -23,6 +26,42 @@ func (db *DB) FindInstallmentById(id string) (*models.Installment, error) {
 func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit int64, page int64) ([]*models.Installment, error) {
 	installments := []*models.Installment{}
 
+	if sort == "" {
+		sort = "createdOn.desc"
+	}
+	var columnKey, operatorKey, columnName, operator string
+
+	sortKeys := strings.Split(sort, ".")
+	if len(sortKeys) == 2 {
+		columnKey = sortKeys[0]
+		operatorKey = sortKeys[1]
+	} else {
+		return nil, errors.New("sort value not proper")
+	}
+
+	switch columnKey {
+	case "createdOn":
+		columnName = "created_on"
+		break
+	case "installmentamount":
+		columnName = "installment_amount"
+		break
+	case "dueDate":
+		columnName = "due_date"
+		break
+	case "state":
+		columnName = "state"
+	}
+
+	switch operatorKey {
+	case "asc":
+		operator = "ASC"
+	case "desc":
+		operator = "DESC"
+	}
+
+	sortClause := fmt.Sprintf("ORDER BY %s %s", columnName, operator)
+
 	sqlFind := `
 		SELECT id,installment_amount,due_date,state,loan_id,repayment_date,created_on,modified_on from installments`
 	sqlFindByLoan := `
@@ -36,28 +75,65 @@ func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit i
 
 	if loanId != nil {
 		if state != "" {
-			rows, err = db.Query(sqlFindByLoanAndState, *loanId, state)
-			if err != nil {
-				return nil, err
+			sqlFindByLoanAndState = sqlFindByLoanAndState + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByLoanAndState = sqlFindByLoanAndState + " " + "LIMIT $3 " + "OFFSET $4"
+				rows, err = db.Query(sqlFindByLoanAndState, *loanId, state, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				rows, err = db.Query(sqlFindByLoanAndState, *loanId, state)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 		} else {
-			rows, err = db.Query(sqlFindByLoan, *loanId)
-			if err != nil {
-				return nil, err
+			sqlFindByLoan = sqlFindByLoan + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByLoan = sqlFindByLoan + " " + "LIMIT $2 " + "OFFSET $3"
+				rows, err = db.Query(sqlFindByLoan, *loanId, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+
+				rows, err = db.Query(sqlFindByLoan, *loanId)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	} else {
 		if state != "" {
-			rows, err = db.Query(sqlFindByState, *loanId)
-			if err != nil {
-				return nil, err
+			sqlFindByState = sqlFindByState + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFindByState = sqlFindByState + " " + "LIMIT $2 " + "OFFSET $3"
+				rows, err = db.Query(sqlFindByState, state, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				rows, err = db.Query(sqlFindByState, state)
+				if err != nil {
+					return nil, err
+				}
 			}
 
 		} else {
-			rows, err = db.Query(sqlFind)
-			if err != nil {
-				return nil, err
+			sqlFind = sqlFind + " " + sortClause
+			if limit != 0 && page != 0 {
+				sqlFind = sqlFind + " " + "LIMIT $1 " + "OFFFSET $2"
+				rows, err = db.Query(sqlFind, limit, page*limit)
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				rows, err = db.Query(sqlFind)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

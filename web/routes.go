@@ -40,11 +40,20 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 		r.Post(options.BaseURL+"/v1"+"/Loans", IsAuthorized(wrapper.AddLoan))
 	})
 	// r.Group(func(r chi.Router) {
-	// 	r.Delete(options.BaseURL+"/Loans/{id}", wrapper.DeleteLoan)
+	// 	r.Delete(options.BaseURL+"/Loans/{id}", IsAuthorized(wrapper.DeleteLoan))
 	// })
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/v1"+"/Loans/{id}", wrapper.LoanById)
+		r.Get(options.BaseURL+"/v1"+"/Loans/{id}", IsAuthorized(wrapper.LoanById))
 	})
+
+	r.Group(func(r chi.Router) {
+		r.Patch(options.BaseURL+"/v1"+"/Loans/{id}/Approve", IsAuthorized(wrapper.ApproveLoan))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1"+"/Loans", IsAuthorized(wrapper.FindLoans))
+	})
+
 	// r.Group(func(r chi.Router) {
 	// 	r.Post(options.BaseURL+"/Loans/{id}", wrapper.AddLoanById)
 	// })
