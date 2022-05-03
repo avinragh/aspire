@@ -13,3 +13,7 @@ func GetInt64Pointer(valueInt int64) *int64 {
 func GetDateTimePointer(valueDateTime strfmt.DateTime) *strfmt.DateTime {
 	return &valueDateTime
 }
+
+func GetFloat64Pointer(valueFloat float64) *float64 {
+	return &valueFloat
+}

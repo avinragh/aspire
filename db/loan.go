@@ -17,7 +17,8 @@ func (db *DB) FindLoanById(id int64) (*models.Loan, error) {
 	loan := &models.Loan{}
 	sqlFindById := `
 		SELECT id,amount,created_on,term,currency,state,modified_on,start_date,user_Id FROM loans WHERE id=$1`
-	err := db.QueryRow(sqlFindById, id).Scan(loan.ID, loan.Amount, loan.CreatedOn, loan.Term, loan.Currency, loan.State, loan.ModifiedOn, loan.StartDate, loan.UserID)
+
+	err := db.QueryRow(sqlFindById, id).Scan(&loan.ID, &loan.Amount, &loan.CreatedOn, &loan.Term, &loan.Currency, &loan.State, &loan.ModifiedOn, &loan.StartDate, &loan.UserID)
 	if err != nil {
 		return nil, err
 	}
@@ -160,13 +161,14 @@ func (db *DB) AddLoan(loan *models.Loan, userId int64) (*models.Loan, error) {
 	currentDate := strfmt.DateTime(time.Now().UTC())
 	loan.CreatedOn = currentDate
 	loan.ModifiedOn = currentDate
+	loan.StartDate = defaultTime
 	loan.UserID = userId
 	sqlInsert := `
 		INSERT INTO loans(amount,created_on,term,currency,state,modified_on,start_date,user_id)
 		VALUES ($1, $2, $3, $4,$5, $6, $7, $8)
 		RETURNING id`
 	var id int64
-	err := db.QueryRow(sqlInsert, loan.Amount, loan.CreatedOn, loan.Term, loan.Currency, loan.State, loan.ModifiedOn, defaultTime, loan.UserID).Scan(&id)
+	err := db.QueryRow(sqlInsert, loan.Amount, loan.CreatedOn, loan.Term, loan.Currency, loan.State, loan.ModifiedOn, loan.StartDate, loan.UserID).Scan(&id)
 	if err != nil {
 		return nil, err
 	}
@@ -174,7 +176,7 @@ func (db *DB) AddLoan(loan *models.Loan, userId int64) (*models.Loan, error) {
 	return loan, nil
 }
 
-func (db *DB) ApproveLoan(loanId int64, installments []*models.Installment) error {
+func (db *DB) ApproveLoan(loanId int64) error {
 	sqlUpdate := `
 		UPDATE loans
 		SET state = $1, modifiedOn = $2, startDate = $3

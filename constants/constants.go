@@ -25,7 +25,7 @@ const (
 	DbUsername = "avinragh"
 	DbPassword = "toor"
 	DbDatabase = "aspire"
-	DbHost     = "host.docker.internal"
+	DbHost     = "host.docker.internal" //"localhost"
 	DbPort     = "5432"
 )
 

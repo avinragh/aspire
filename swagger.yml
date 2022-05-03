@@ -187,6 +187,38 @@ definitions:
       page:
         type: string
 
+  FindInstallmentsParams:
+    type: object
+    properties:
+      loanId:
+        type: string
+      state:
+        type: string
+      sort:
+        type: string
+      limit:
+        type: string
+      page: 
+        type: string
+
+  RepaymentRequest:
+    type: object
+    required:
+      - repaymentAmount
+    properties:
+      repaymentAmount:
+        type: number
+        format: double
+
+
+  ErrorResponse:
+    type: object
+    properties:
+      message:
+        type: string
+      code:
+        type: string
+
   
 
 

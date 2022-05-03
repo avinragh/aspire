@@ -23,7 +23,7 @@ func (db *DB) FindInstallmentById(id string) (*models.Installment, error) {
 	return installment, nil
 }
 
-func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit int64, page int64) ([]*models.Installment, error) {
+func (db *DB) FindInstallments(loanId int64, state string, sort string, limit int64, page int64) ([]*models.Installment, error) {
 	installments := []*models.Installment{}
 
 	if sort == "" {
@@ -73,17 +73,17 @@ func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit i
 	var rows *sql.Rows
 	var err error
 
-	if loanId != nil {
+	if loanId != 0 {
 		if state != "" {
 			sqlFindByLoanAndState = sqlFindByLoanAndState + " " + sortClause
 			if limit != 0 && page != 0 {
 				sqlFindByLoanAndState = sqlFindByLoanAndState + " " + "LIMIT $3 " + "OFFSET $4"
-				rows, err = db.Query(sqlFindByLoanAndState, *loanId, state, limit, page*limit)
+				rows, err = db.Query(sqlFindByLoanAndState, loanId, state, limit, page*limit)
 				if err != nil {
 					return nil, err
 				}
 			} else {
-				rows, err = db.Query(sqlFindByLoanAndState, *loanId, state)
+				rows, err = db.Query(sqlFindByLoanAndState, loanId, state)
 				if err != nil {
 					return nil, err
 				}
@@ -93,13 +93,13 @@ func (db *DB) FindInstallments(loanId *int64, state string, sort string, limit i
 			sqlFindByLoan = sqlFindByLoan + " " + sortClause
 			if limit != 0 && page != 0 {
 				sqlFindByLoan = sqlFindByLoan + " " + "LIMIT $2 " + "OFFSET $3"
-				rows, err = db.Query(sqlFindByLoan, *loanId, limit, page*limit)
+				rows, err = db.Query(sqlFindByLoan, loanId, limit, page*limit)
 				if err != nil {
 					return nil, err
 				}
 			} else {
 
-				rows, err = db.Query(sqlFindByLoan, *loanId)
+				rows, err = db.Query(sqlFindByLoan, loanId)
 				if err != nil {
 					return nil, err
 				}
@@ -180,7 +180,7 @@ func (db *DB) DeleteInstallment(id int64) error {
 	return nil
 }
 
-func (db *DB) RepayInstallment(installmentId, repaymentAmount float64) error {
+func (db *DB) RepayInstallment(installmentId int64, repaymentAmount float64) error {
 	sqlUpdate := `
 		UPDATE installments
 		SET state = $1, repayment_amount =$2,repayment_time = $3, modifiedOn = $4

@@ -69,17 +69,13 @@ func TestAddUser(t *testing.T) {
 
 	t.Run("FAILURE DUPLICATE KEY", func(t *testing.T) {
 		_, err := db.AddUser(user)
-		if err != nil {
-			assert.EqualErrorf(t, err, `pq: duplicate key value violates unique constraint "users_email_key"`, "Error Not as Expected")
-		}
+		assert.EqualErrorf(t, err, `pq: duplicate key value violates unique constraint "users_email_key"`, "Error Not as Expected")
 
 	})
 
 	t.Run("FAILURE MISSING FIELDS", func(t *testing.T) {
 		_, err := db.AddUser(failUser)
-		if err != nil {
-			assert.EqualErrorf(t, err, `pq: null value in column "password" violates not-null constraint`, "Error Not as Expected")
-		}
+		assert.EqualErrorf(t, err, `pq: null value in column "password" violates not-null constraint`, "Error Not as Expected")
 
 	})
 
@@ -90,5 +86,29 @@ func TestAddUser(t *testing.T) {
 	}
 	db.DeleteUser(*user.ID)
 	db.Close()
+
+}
+
+func TestDeleteUser(t *testing.T) {
+	//setup
+	db, err := Init()
+	if err != nil {
+		t.Errorf("Not able to connect to db")
+	}
+	user := &models.User{Username: util.GetStringPointer("avinragh"), Password: util.GetStringPointer("Siri2109!"), Role: "admin", Email: util.GetStringPointer("avinragh@gmail.com")}
+	user, err = db.AddUser(user)
+	if err != nil {
+		t.Errorf("Not able to Add user to db for testing")
+	}
+
+	//run tests
+	t.Run("SUCCESS", func(t *testing.T) {
+		err := db.DeleteUser(*user.ID)
+		if err != nil {
+			t.Errorf("Not able to Find user: %s", err.Error())
+		}
+		assert.Empty(t, err, "Could not delete user")
+
+	})
 
 }

@@ -7,7 +7,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"strconv"
 	"time"
@@ -34,7 +33,7 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 	if err != nil && err == sql.ErrNoRows {
 		hashPassword, err := GeneratehashPassword(*user.Password)
 		if err != nil {
-			log.Fatalln("error in password hash")
+			logger.Fatalln("error in password hash")
 		}
 		user.Password = &hashPassword
 

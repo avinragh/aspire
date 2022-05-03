@@ -28,7 +28,7 @@ services:
   #     # HTTP management UI
   #     - 15672:15672
 
-  server:
+  aspir-server:
     build:
       context: .
       dockerfile: Dockerfile

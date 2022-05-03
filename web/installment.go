@@ -9,13 +9,12 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/go-chi/chi/v5"
 )
 
 // FindLoanByid operation middleware
-func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) InstallmentById(w http.ResponseWriter, r *http.Request) {
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
 
@@ -37,7 +36,7 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 
 	database := ctx.GetDB()
 
-	loan, err := database.FindLoanById(idInt)
+	installment, err := database.FindLoanById(idInt)
 	if err != nil {
 		w.WriteHeader(http.StatusBadRequest)
 		return
@@ -45,7 +44,7 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(loan); err != nil {
+		if err := json.NewEncoder(w).Encode(installment); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Println(err)
 			return
@@ -60,35 +59,43 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 	handler(w, r.WithContext(r.Context()))
 }
 
-func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) AddInstallment(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
 
-	loan := &models.Loan{}
+	installment := &models.Installment{}
+
+	// ------------- Path parameter "id" -------------
+	var loanId string
+
+	err := runtime.BindStyledParameter("simple", false, "loanId", chi.URLParam(r, "loanId"), &loanId)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	loanIdInt, err := strconv.ParseInt(loanId, 10, 64)
+	if err != nil {
+		w.WriteHeader((http.StatusBadRequest))
+	}
 
 	reqBody, _ := ioutil.ReadAll(r.Body)
-	err := json.Unmarshal(reqBody, &loan)
+
+	err = json.Unmarshal(reqBody, &installment)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		logger.Println(err)
 		return
 	}
-	if loan.Currency == "" {
-		loan.Currency = "USD"
-	}
-	loan.State = constants.LoanStatusPending
+	// if loan.Currency == "" {
+	// 	loan.Currency = "USD"
+	// }
+	installment.State = constants.InstallmentStatusPending
 
-	userIdString := r.Context().Value(ContextUserIdKey).(string)
-
-	userId, err := strconv.ParseInt(userIdString, 16, 64)
 	database := ctx.GetDB()
 
-	spew.Dump("Hey")
-	spew.Dump(userIdString)
-	spew.Dump(userId)
-
-	loan, err = database.AddLoan(loan, userId)
+	installment, err = database.AddInstallment(installment, loanIdInt)
 	if err != nil {
 		w.WriteHeader(http.StatusConflict)
 		logger.Println(err)
@@ -99,7 +106,7 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(loan); err != nil {
+		if err := json.NewEncoder(w).Encode(installment); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Println(err)
 			return
@@ -114,10 +121,12 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 	handler(w, r.WithContext(r.Context()))
 }
 
-func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *http.Request) {
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
 	database := ctx.GetDB()
+
+	repaymentRequest := models.RepaymentRequest{}
 
 	logger.Println("In Find Server By id")
 
@@ -130,55 +139,46 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 		return
 	}
 
-	idInt, err := strconv.ParseInt(id, 10, 64)
+	IdInt, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("Could not Aprrove Loan: %s", err), http.StatusInternalServerError)
+		return
 
-	//check user role. Allow only if admin
-	userRole := r.Context().Value(ContextRoleKey).(string)
+	}
 
-	var handler = func(w http.ResponseWriter, r *http.Request) {}
+	reqBody, _ := ioutil.ReadAll(r.Body)
+	err = json.Unmarshal(reqBody, &repaymentRequest)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Println(err)
+		return
+	}
 
-	if userRole == constants.RoleAdmin {
-		loan, err := database.FindLoanById(idInt)
-		if err != nil {
-			http.Error(w, fmt.Sprintf("Loan not found:"), http.StatusBadRequest)
-			return
-		}
+	err = database.RepayInstallment(IdInt, *repaymentRequest.RepaymentAmount)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		logger.Println(err)
+		return
+	}
 
-		if loan.State == constants.LoanStatusPending {
-			err = database.ApproveLoan(idInt)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Could not Aprrove Loan: %s", err), http.StatusInternalServerError)
-				return
-			}
-
-			handler = func(w http.ResponseWriter, r *http.Request) {
-				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				if err := json.NewEncoder(w).Encode(loan); err != nil {
-					w.WriteHeader(http.StatusBadRequest)
-					logger.Println(err)
-					return
-
-				}
-			}
-		}
-
-	} else {
-		handler = func(w http.ResponseWriter, r *http.Request) {
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		if err := json.NewEncoder(w).Encode(""); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			logger.Println(err)
 			return
 		}
 	}
+
 	for _, middleware := range siw.HandlerMiddlewares {
 		handler = middleware(handler)
 	}
 
 	handler(w, r.WithContext(r.Context()))
-
 }
 
-func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) FindInstallments(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
 
@@ -186,16 +186,16 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 
 	logger := ctx.GetLogger()
 
-	loans := []*models.Loan{}
+	installments := []*models.Installment{}
 
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params models.FindLoansParams
+	var params models.FindInstallmentsParams
 
 	// ------------- Optional query parameter "userId" -------------
 
-	err = runtime.BindQueryParameter("form", true, false, "userId", r.URL.Query(), &params.UserID)
+	err = runtime.BindQueryParameter("form", true, false, "loanId", r.URL.Query(), &params.LoanID)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid format for parameter userId: %s", err), http.StatusBadRequest)
 		return
@@ -226,22 +226,18 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 	}
 
 	userRole := r.Context().Value(ContextRoleKey).(string)
-	userId := r.Context().Value(ContextUserIdKey).(string)
 
-	var userIdInt int64
+	var loanIdInt int64
 
-	if userRole == constants.RoleAdmin {
-		if params.UserID != "" {
-			userIdInt, err = strconv.ParseInt(params.UserID, 10, 64)
-			if err != nil {
-				http.Error(w, fmt.Sprintf("Invalid parameter UserId: %s", err), http.StatusBadRequest)
-				return
-			}
-		}
-	} else if userRole == constants.RoleUser {
-		userIdInt, err = strconv.ParseInt(userId, 10, 64)
+	if userRole == constants.RoleUser && params.LoanID == "" {
+		http.Error(w, fmt.Sprintf("Invalid parameter loanId: %s", err), http.StatusBadRequest)
+		return
+	}
+
+	if params.LoanID != "" {
+		loanIdInt, err = strconv.ParseInt(params.LoanID, 10, 64)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot determine userId: %s", err), http.StatusInternalServerError)
+			http.Error(w, fmt.Sprintf("Invalid parameter loanId: %s", err), http.StatusBadRequest)
 			return
 		}
 	}
@@ -262,7 +258,7 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 		page, err = strconv.ParseInt(params.Page, 10, 64)
 	}
 
-	loans, err = database.FindLoans(userIdInt, params.State, params.Sort, limit, page)
+	installments, err = database.FindInstallments(loanIdInt, params.State, params.Sort, limit, page)
 	if err != nil {
 		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
 		return
@@ -271,7 +267,7 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(loans); err != nil {
+		if err := json.NewEncoder(w).Encode(installments); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Println(err)
 			return

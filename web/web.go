@@ -30,9 +30,6 @@ type ServerInterface interface {
 	// (POST /Loans)
 	AddLoan(w http.ResponseWriter, r *http.Request)
 
-	// (PUT /Loans/{id})
-	UpdateLoan(w http.ResponseWriter, r *http.Request)
-
 	// (POST /Signup)
 	Signup(w http.ResponseWriter, r *http.Request)
 
