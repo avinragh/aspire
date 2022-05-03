@@ -30,6 +30,22 @@ docker-compose up -d
 docker-compose logs aspire-server
 ```
 
-### User Signin and Login
+### User Signup and Login
+
+#### API - /v1/Signup
+
+Request:
+
+```json
+{
+    "username":"<username>",
+    "password":"<password",
+    "role": "<role: admin/user>",
+    "email" : "<email>"
+}
+
+
+
+
 
 
