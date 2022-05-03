@@ -11,6 +11,7 @@ Avinash Raghunathan
 * Suitable for use in other software projects
 * Tests that run from `docker-compose up`
 * Simple and Concise
+* JWT Authentication for users
 * Cron jobs for calculating 
 
 ## Usage
@@ -29,5 +30,6 @@ docker-compose up -d
 docker-compose logs aspire-server
 ```
 
+### User Signin and Login
 
 
