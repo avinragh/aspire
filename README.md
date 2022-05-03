@@ -7,12 +7,11 @@ Avinash Raghunathan
 
 ## Features
 
-* Implements Create, Fetch and Delete APIs
+* Implements Create, Fetch and Delete RESTful APIs
 * Suitable for use in other software projects
 * Tests that run from `docker-compose up`
 * Simple and Concise
-* Constants available for ISO standard format values e.g: Country, Currency and Bank Codes
-* User Defined context and Http client can be passed to have more control over the API Operations like Timeout and Cancellation
+* Cron jobs for calculating 
 
 ## Usage
 
