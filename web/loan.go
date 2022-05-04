@@ -2,52 +2,68 @@ package web
 
 import (
 	"aspire/constants"
+	aerrors "aspire/errors"
 	"aspire/models"
+	"database/sql"
 	"encoding/json"
-	"fmt"
+	"errors"
 	"io/ioutil"
 	"net/http"
 	"strconv"
 
-	"github.com/davecgh/go-spew/spew"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/go-chi/chi/v5"
+	"github.com/go-openapi/strfmt"
 )
 
-// FindLoanByid operation middleware
+// FindLoanByid Handler
 func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Request) {
 	ctx := siw.GetContext()
 	logger := ctx.GetLogger()
 
-	logger.Println("In Find Server By id")
-
-	// ------------- Path parameter "id" -------------
 	var id string
 
 	err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	idInt, err := strconv.ParseInt(id, 10, 64)
 	if err != nil {
-		w.WriteHeader((http.StatusBadRequest))
+		err = errors.New("ID not right format")
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
 	}
 
 	database := ctx.GetDB()
 
 	loan, err := database.FindLoanById(idInt)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(loan); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -60,6 +76,7 @@ func (siw *ServerInterfaceWrapper) LoanById(w http.ResponseWriter, r *http.Reque
 	handler(w, r.WithContext(r.Context()))
 }
 
+//AddLoan Handler
 func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
@@ -67,31 +84,48 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 
 	loan := &models.Loan{}
 
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	err := json.Unmarshal(reqBody, &loan)
+	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
 		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+
+	}
+	err = json.Unmarshal(reqBody, &loan)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
-	if loan.Currency == "" {
-		loan.Currency = "USD"
-	}
-	loan.State = constants.LoanStatusPending
+
+	loan.Validate(strfmt.Default)
 
 	userIdString := r.Context().Value(ContextUserIdKey).(string)
 
 	userId, err := strconv.ParseInt(userIdString, 16, 64)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
 	database := ctx.GetDB()
-
-	spew.Dump("Hey")
-	spew.Dump(userIdString)
-	spew.Dump(userId)
 
 	loan, err = database.AddLoan(loan, userId)
 	if err != nil {
-		w.WriteHeader(http.StatusConflict)
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -100,8 +134,11 @@ func (siw *ServerInterfaceWrapper) AddLoan(w http.ResponseWriter, r *http.Reques
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(loan); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -121,16 +158,27 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 
 	logger.Println("In Find Server By id")
 
-	// ------------- Path parameter "id" -------------
 	var id string
 
 	err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter id: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: id not in correct format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	idInt, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
 
 	//check user role. Allow only if admin
 	userRole := r.Context().Value(ContextRoleKey).(string)
@@ -140,14 +188,30 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 	if userRole == constants.RoleAdmin {
 		loan, err := database.FindLoanById(idInt)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Loan not found:"), http.StatusBadRequest)
-			return
+			if err == sql.ErrNoRows {
+				errorResponse := aerrors.New(aerrors.ErrNotFoundCode, aerrors.ErrNotFoundMessage, "")
+				w.WriteHeader(http.StatusNotFound)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
+				return
+			} else {
+				errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+				logger.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
+				return
+			}
 		}
 
 		if loan.State == constants.LoanStatusPending {
 			err = database.ApproveLoan(idInt)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Could not Aprrove Loan: %s", err), http.StatusInternalServerError)
+				errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+				logger.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
 				return
 			}
 
@@ -155,8 +219,11 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 				w.Header().Set("Content-Type", "application/json")
 				w.WriteHeader(http.StatusOK)
 				if err := json.NewEncoder(w).Encode(loan); err != nil {
-					w.WriteHeader(http.StatusBadRequest)
+					errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 					logger.Println(err)
+					w.WriteHeader(http.StatusInternalServerError)
+					w.Header().Set("Content-Type", "application/json")
+					json.NewEncoder(w).Encode(errorResponse)
 					return
 
 				}
@@ -165,8 +232,12 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 
 	} else {
 		handler = func(w http.ResponseWriter, r *http.Request) {
+			err = errors.New("Require Admin role to perform action")
+			errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusForbidden)
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 	}
@@ -193,35 +264,55 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 	// Parameter object where we will unmarshal all parameters from the context
 	var params models.FindLoansParams
 
-	// ------------- Optional query parameter "userId" -------------
+	// -------------  query parameters -------------
 
 	err = runtime.BindQueryParameter("form", true, false, "userId", r.URL.Query(), &params.UserID)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter userId: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: userId not in correct format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	err = runtime.BindQueryParameter("form", true, false, "state", r.URL.Query(), &params.State)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter state: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: state nt in correct format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	err = runtime.BindQueryParameter("form", true, false, "sort", r.URL.Query(), &params.Sort)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter sort: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: sort param not in correct format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	err = runtime.BindQueryParameter("form", true, false, "limit", r.URL.Query(), &params.Limit)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter limit: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: sort param not in cporrect format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	err = runtime.BindQueryParameter("form", true, false, "page", r.URL.Query(), &params.Page)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter page: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: page param not in correct format")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -234,14 +325,22 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 		if params.UserID != "" {
 			userIdInt, err = strconv.ParseInt(params.UserID, 10, 64)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Invalid parameter UserId: %s", err), http.StatusBadRequest)
+				errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: user Id not in correct format")
+				logger.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
 				return
 			}
 		}
 	} else if userRole == constants.RoleUser {
 		userIdInt, err = strconv.ParseInt(userId, 10, 64)
 		if err != nil {
-			http.Error(w, fmt.Sprintf("Cannot determine userId: %s", err), http.StatusInternalServerError)
+			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: user Id not in correct format")
+			logger.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 	}
@@ -252,11 +351,20 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 		if params.Page != "" {
 			limit, err = strconv.ParseInt(params.Limit, 10, 64)
 			if err != nil {
-				http.Error(w, fmt.Sprintf("Invalid parameter limit: %s", err), http.StatusBadRequest)
+				errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: limit not in correct format")
+				logger.Println(err)
+				w.WriteHeader(http.StatusBadRequest)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
 				return
 			}
 		} else {
-			http.Error(w, "Cannot have limit wothout page", http.StatusBadRequest)
+			err = errors.New("Cannot have limit wothout page")
+			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+			logger.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 		page, err = strconv.ParseInt(params.Page, 10, 64)
@@ -264,7 +372,11 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 
 	loans, err = database.FindLoans(userIdInt, params.State, params.Sort, limit, page)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Invalid format for parameter username: %s", err), http.StatusBadRequest)
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -272,8 +384,11 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		if err := json.NewEncoder(w).Encode(loans); err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
 			logger.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 	}

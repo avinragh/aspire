@@ -6,6 +6,7 @@ const (
 	ErrUnauthorizedCode    = "UNAUTHORIZED_ERR"
 	ErrForbiddenCode       = "FORBIDDEN_ERR"
 	ErrConflictCode        = "RESOURCE_CONFLICT_ERR"
+	ErrNotFoundCode        = "NOT_FOUND_ERR"
 )
 
 const (
@@ -14,4 +15,5 @@ const (
 	ErrAuthenticationMessage  = "User is not authenticated"
 	ErrForbiddenMessage       = "User cannot perform the action"
 	ErrConflictMessage        = "The resource Already exists"
+	ErrNotFoundMessage        = "The resource does not exist"
 )

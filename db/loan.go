@@ -157,7 +157,7 @@ func (db *DB) FindLoans(userId int64, state string, sort string, limit int64, pa
 }
 
 func (db *DB) AddLoan(loan *models.Loan, userId int64) (*models.Loan, error) {
-	if loan.Amount == 0 || loan.Term == 0 {
+	if *loan.Amount == 0 || *loan.Term == 0 {
 		return nil, errors.New("Loan and term Cannot be zero")
 	}
 	defaultTime := strfmt.DateTime(time.Time{}.UTC())
@@ -166,6 +166,12 @@ func (db *DB) AddLoan(loan *models.Loan, userId int64) (*models.Loan, error) {
 	loan.ModifiedOn = currentDate
 	loan.StartDate = defaultTime
 	loan.UserID = userId
+	if loan.Currency == "" {
+		loan.Currency = "USD"
+	}
+	if loan.State == "" {
+		loan.State = constants.LoanStatusPending
+	}
 	sqlInsert := `
 		INSERT INTO loans(amount,created_on,term,currency,state,modified_on,start_date,user_id)
 		VALUES ($1, $2, $3, $4,$5, $6, $7, $8)

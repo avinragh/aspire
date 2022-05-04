@@ -14,6 +14,7 @@ import (
 	aerrors "aspire/errors"
 
 	jwt "github.com/dgrijalva/jwt-go"
+	"github.com/go-openapi/strfmt"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -23,18 +24,26 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 	logger := ctx.GetLogger()
 	database := ctx.GetDB()
 	user := &models.User{}
-	reqBody, _ := ioutil.ReadAll(r.Body)
-	err := json.Unmarshal(reqBody, &user)
+	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
 		logger.Println(err)
-		w.WriteHeader(http.StatusInternalServerError)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+	err = json.Unmarshal(reqBody, &user)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
-	err = user.Validate(user)
+	err = user.Validate(strfmt.Default)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
 		logger.Println(err)
@@ -90,22 +99,38 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
+	logger := ctx.GetLogger()
 	database := ctx.GetDB()
 
 	authdetails := &models.Authentication{}
 	err := json.NewDecoder(r.Body).Decode(&authdetails)
 	if err != nil {
-		err = errors.New("Error in reading body")
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err = authdetails.Validate(strfmt.Default)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	user, err := database.FindUserByEmail(*authdetails.Email)
 	if err != nil && err == sql.ErrNoRows {
 		err = errors.New("Username or Password is incorrect")
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -113,16 +138,21 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 
 	if !check {
 		err = errors.New("Username or Password is incorrect")
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
 	validToken, err := GenerateJWT(*user.ID, user.Role)
 	if err != nil {
-		err = errors.New("Failed to generate token")
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(err)
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -132,6 +162,7 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 	token.TokenString = &validToken
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(token)
+	return
 }
 
 func GeneratehashPassword(password string) (string, error) {
