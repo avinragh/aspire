@@ -21,7 +21,7 @@ type User struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" json:"created_on"`
+	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" sql:"created_on"`
 
 	// email
 	// Required: true
@@ -33,7 +33,7 @@ type User struct {
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" json:"modified_on"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" sql:"modified_on"`
 
 	// password
 	// Required: true

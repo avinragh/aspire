@@ -11,6 +11,8 @@ import (
 	"strconv"
 	"time"
 
+	aerrors "aspire/errors"
+
 	jwt "github.com/dgrijalva/jwt-go"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -24,8 +26,21 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	err := json.Unmarshal(reqBody, &user)
 	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err = user.Validate(user)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
 		return
 	}
 
@@ -33,25 +48,41 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 	if err != nil && err == sql.ErrNoRows {
 		hashPassword, err := GeneratehashPassword(*user.Password)
 		if err != nil {
-			logger.Fatalln("error in password hash")
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
 		}
 		user.Password = &hashPassword
 
 		user, err = database.AddUser(user)
 		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+		} else {
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
-
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(user)
 
 	}
-	logger.Println(err)
 	err = errors.New("Email already in use")
+	logger.Println(err)
+	errorResponse := aerrors.New(aerrors.ErrConflictCode, aerrors.ErrConflictMessage, err.Error())
+	w.WriteHeader(http.StatusConflict)
 	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(err)
+	json.NewEncoder(w).Encode(errorResponse)
 	return
 
 }

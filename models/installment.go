@@ -21,7 +21,7 @@ type Installment struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" json:"created_on"`
+	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" sql:"created_on"`
 
 	// due date
 	// Required: true
@@ -41,14 +41,14 @@ type Installment struct {
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" json:"modified_on"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" sql:"modified_on"`
 
 	// repayment amount
 	RepaymentAmount float64 `json:"repaymentAmount,omitempty"`
 
 	// repayment time
 	// Format: date-time
-	RepaymentTime strfmt.DateTime `json:"repaymentTime,omitempty" json:repayment_time"`
+	RepaymentTime strfmt.DateTime `json:"repaymentTime,omitempty" sql:repayment_time"`
 
 	// state
 	State string `json:"state,omitempty"`

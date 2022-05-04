@@ -157,6 +157,9 @@ func (db *DB) FindLoans(userId int64, state string, sort string, limit int64, pa
 }
 
 func (db *DB) AddLoan(loan *models.Loan, userId int64) (*models.Loan, error) {
+	if loan.Amount == 0 || loan.Term == 0 {
+		return nil, errors.New("Loan and term Cannot be zero")
+	}
 	defaultTime := strfmt.DateTime(time.Time{}.UTC())
 	currentDate := strfmt.DateTime(time.Now().UTC())
 	loan.CreatedOn = currentDate

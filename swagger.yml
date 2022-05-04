@@ -23,6 +23,34 @@ schemes:
 - "https"
 - "http"
 paths:
+  /v1/Signup:
+    post:
+      tags:
+      - "signup"
+      summary: "Signup a user"
+      description: "Signup a user with the credentials"
+      operationId: "signup"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - name: user
+        in: body
+        description: The user to create
+        schema:
+          $ref: '#/definitions/User'
+      responses:
+        200:
+          description: OK
+        400:
+          description: Bad Request. Both email and password must be present and must be strings
+        409:
+          description: Conflict. User with given email already exists
+        500:
+          description: Internal Server Error 
+        
+        
   /loan:
     post:
       tags:
@@ -107,18 +135,18 @@ definitions:
       createdOn:
         type: string
         format: date-time
-        x-go-custom-tag: json:"created_on"
+        x-go-custom-tag: sql:"created_on"
       modifiedOn:
         type: string
         format: date-time
-        x-go-custom-tag: json:"modified_on"
+        x-go-custom-tag: sql:"modified_on"
       loanId:
         type: integer
         format: int64
       repaymentTime:
         type: string
         format: date-time
-        x-go-custom-tag: json:repayment_time"
+        x-go-custom-tag: sql:repayment_time"
 
 
   User:
@@ -141,11 +169,11 @@ definitions:
       createdOn:
         type: string
         format: date-time
-        x-go-custom-tag: json:"created_on"
+        x-go-custom-tag: sql:"created_on"
       modifiedOn:
         type: string
         format: date-time
-        x-go-custom-tag: json:"modified_on"
+        x-go-custom-tag: sql:"modified_on"
       password:
         type: string
   
@@ -210,14 +238,17 @@ definitions:
         type: number
         format: double
 
-
   ErrorResponse:
     type: object
     properties:
-      message:
-        type: string
       code:
         type: string
+      message:
+        type: string
+      detail:
+        type: string
+
+
 
   
 
