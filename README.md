@@ -29,13 +29,16 @@ Avinash Raghunathan
     * [1.4.2. API - GET /v1/Loans](#heading--1-4-2)
     * [1.4.3. API - POST /v1/Loans](#heading--1-4-3)
     * [1.4.4. API - PATCH /v1/Loans/{id}/Approve](#heading--1-4-4)
-  * [1.5. Installment APIs]()
-    * [1.5.1. API - GET /v1/Installments/{id}]()
-    * [1.5.2. API - GET /v1/Installments]()
-    * [1.5.3. API - POST /v1/Installments]()
-    * [1.5.4. API - PATCH /v1/Installments/{id}/Repay]()
+  * [1.5. Installment APIs](#heading--1-5)
+    * [1.5.1. API - GET /v1/Installments/{id}](#heading--1-5-1)
+    * [1.5.2. API - GET /v1/Installments](#heading--1-5-2)
+    * [1.5.3. API - POST /v1/Installments](#heading--1-5-3)
+    * [1.5.4. API - PATCH /v1/Installments/{id}/Repay](#heading--1-5-4)
 
 **[2. Crons](#heading--2)**
+
+  * [2.1. Insert Installments](#heading--2-1)
+  * [2.2. Update Paid Loans](#heading--2-2) 
 
 
 <div id="heading--1"/>
@@ -265,6 +268,43 @@ Error Responses:
 <div id="heading--1-4-4"/>
 
 #### API - PATCH /v1/Loans/{id}/Approve
+
+<div id="heading--1-5"/>
+
+### Installment APIs
+
+<div id="heading--1-5-1"/>
+
+#### API - GET /v1/Installments/{id}
+
+<div id="heading--1-5-2"/>
+
+#### API - GET /v1/Installments
+
+<div id="heading--1-5-3"/>
+
+#### POST /v1/Installments
+
+<div id="heading--1-5-4"/>
+
+#### PATCH /v1/Installments/{id}/Repay
+
+<div id="heading--2"/>
+
+## Crons
+
+<div id="heading--2-1"/>
+
+### Insert Installments
+
+<div id="heading--2-2"/>
+
+### Update Paid Loans
+
+
+
+
+
 
 
 
