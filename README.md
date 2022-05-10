@@ -15,7 +15,33 @@ Avinash Raghunathan
 * Cron jobs for calculating 
 * Filter, Sort and Pagination Support
 
+## Content
+
+**[1. Usage](#heading--1)**
+
+  * [1.1. Run Tests and Start Server](#heading--1-1)
+  * [1.2. Error Response](#heading--1-2)
+  * [1.3. User Signup and Login](#heading--1-3)
+    * [1.3.1. API -  POST /v1/Signup](#heading--1-3-1)
+    * [1.3.2. API - POST /v1/Login](#heading--1-3-2)
+  * [1.4. Loan APIs](#heading--1-4)
+    * [1.4.1. API - GET /v1/Loans/{id}](#heading--1-4-1)
+    * [1.4.2. API - GET /v1/Loans](#heading--1-4-2)
+    * [1.4.3. API - POST /v1/Loans](#heading--1-4-3)
+    * [1.4.4. API - PATCH /v1/Loans/{id}/Approve](#heading--1-4-4)
+  * [1.5. Installment APIs]()
+    * [1.5.1. API - GET /v1/Installments/{id}]()
+    * [1.5.2. API - GET /v1/Installments]()
+    * [1.5.4. API - PATCH /v1/Installments/{id}/Repay]()
+
+**[2. Crons](#heading--2)**
+
+
+<div id="heading--1"/>
+
 ## Usage
+
+<div id="heading--1-1"/>
 
 ### Run Tests and Start Server
 
@@ -32,6 +58,8 @@ docker-compose logs aspire-server
 ```
 <br/>
 
+<div id="heading--1-2"/>
+
 ### Error Response
 
 All API Errors are returned in a single format and with the appropriate HTTP Status.
@@ -46,7 +74,11 @@ The format for the ErrorResponse is:
 ```
 <br/>
 
+<div id="heading--1-3"/>
+
 ### User Signup and Login
+
+<div id="heading--1-3-1"/>
 
 #### API -  POST /v1/Signup
 
@@ -91,6 +123,8 @@ Error Responses:
 
 <br/>
 
+<div id="heading--1-3-2"/>
+
 #### API - POST /v1/Login
 
 Request:
@@ -127,6 +161,12 @@ All consequent requests need to be sent with the Header **Token** and Value = _t
 
 <br/>
 
+<div id="heading--1-4"/>
+
+### Loan APIs
+
+<div id="heading--1-4-1"/>
+
 #### API - GET /v1/Loans/{id}
 
 Response:
@@ -159,7 +199,7 @@ Error Responses:
 
 <br/>
 
-
+<div id="heading--1-4-2"/>
 
 #### API - GET /v1/Loans
 
@@ -216,6 +256,16 @@ Error Responses:
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error when there is an error in the system
 
 <br/>
+
+<div id="heading--1-4-3"/>
+
+#### API - POST /v1/Loans
+
+<div id="heading--1-4-4"/>
+
+#### API - PATCH /v1/Loans/{id}/Approve
+
+
 
 
 

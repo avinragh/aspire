@@ -98,6 +98,18 @@ func (siw *ServerInterfaceWrapper) AddInstallment(w http.ResponseWriter, r *http
 	// ------------- Path parameter "id" -------------
 	var loanId string
 
+	userRole := r.Context().Value(ContextRoleKey).(string)
+
+	if userRole == constants.RoleUser {
+		err := errors.New("User does not have permission to this method")
+		errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
 	err := runtime.BindStyledParameter("simple", false, "loanId", chi.URLParam(r, "loanId"), &loanId)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
