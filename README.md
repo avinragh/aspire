@@ -76,15 +76,15 @@ Error Responses:
 
 ##### 400 Bad Request:
 
-If the request from user is not well formed. 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the request from user is not well formed. 
 
 ##### 500 Internal Server Error:
 
-Error when theres an error in the system
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error when theres an error in the system
 
 ##### 409 Conflict:
 
-If a user with given email already exists
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If a user with given email already exists
 
 
 #### API - /v1/Login
@@ -109,11 +109,11 @@ ErrorResponses:
 
 ##### 400 Bad Request:
 
-If the email or password are not given or invalid
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;If the email or password are not given or invalid
 
 ##### 500 Internal Server Error
 
-Error when theres an error in the system
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Error when theres an error in the system
 
 All consequent requests need to be sent with the Header Token and Value = tokenString
 
