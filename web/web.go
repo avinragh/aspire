@@ -25,20 +25,40 @@ const (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// (GET /Loans/id)
-	LoanById(w http.ResponseWriter, r *http.Request, id string)
-
-	// (POST /Loans)
-	AddLoan(w http.ResponseWriter, r *http.Request, id string)
-
 	// (POST /Signup)
 	Signup(w http.ResponseWriter, r *http.Request)
 
 	// (POST /Login)
 	Login(w http.ResponseWriter, r *http.Request)
 
+	// (GET /Loans/id)
+	LoanById(w http.ResponseWriter, r *http.Request, id string)
+
+	// (POST /Loans)
+	AddLoan(w http.ResponseWriter, r *http.Request)
+
 	// (GET /Loans)
 	Loans(w http.ResponseWriter, r *http.Request, params FindLoansParams)
+
+	// (DELETE /Loans/id)
+	DeleteLoan(w http.ResponseWriter, r *http.Request, id string)
+
+	// (PATCH /Loans/id/Approve)
+	ApproveLoan(w http.ResponseWriter, r *http.Request, id string)
+
+	InstallmentById(w http.ResponseWriter, r *http.Request, id string)
+
+	// (POST /Loans)
+	AddInstallment(w http.ResponseWriter, r *http.Request)
+
+	// (GET /Loans)
+	Installments(w http.ResponseWriter, r *http.Request, params FindInstallmentsParams)
+
+	// (DELETE /Loans/id)
+	DeleteInstallment(w http.ResponseWriter, r *http.Request, id string)
+
+	// (PATCH /Loans/id/Approve)
+	RepayInstallment(w http.ResponseWriter, r *http.Request, id string)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.

@@ -1,6 +1,6 @@
 swagger: "2.0"
 info:
-  description: "This is a sample server Petstore server.  You can find out more about     Swagger at [http://swagger.io](http://swagger.io) or on [irc.freenode.net, #swagger](http://swagger.io/irc/).      For this sample, you can use the api key `special-key` to test the authorization     filters."
+  description: "This is the Aspire Mini API"
   version: "1.0.0"
   title: "Aspire mini api"
   contact:
@@ -11,13 +11,12 @@ info:
 host: "localhost"
 basePath: "/v1"
 tags:
+- name: "user"
+  description: "All about user management"
 - name: "loan"
-  description: "Everything about your Pets"
-  externalDocs:
-    description: "Find out more"
-    url: "http://swagger.io"
+  description: "Everything to do with Loans"
 - name: "installment"
-  description: "Access to Petstore orders"
+  description: "Everything to do with Installments"
 schemes:
 - "https"
 - "http"
@@ -25,7 +24,7 @@ paths:
   /Signup:
     post:
       tags:
-      - "signup"
+      - "user"
       summary: "Signup a user"
       description: "Signup a user with the credentials"
       operationId: "signup"
@@ -34,23 +33,208 @@ paths:
       produces:
       - "application/json"
       parameters:
-      - name: user
-        in: body
-        description: The user to create
+      - name: "user"
+        in: "body"
+        description: "The user to create"
         schema:
-          $ref: '#/definitions/User'
+          type: object
+          required:
+          - email
+          - password
+          - role
+          properties:
+            email:
+              type: string
+            password:
+              type: string
+            username:
+              type: string
+            role:
+              type: string
       responses:
         200:
           description: OK
+          schema:
+            $ref: '#/definitions/User'
         400:
-          description: Bad Request. Both email and password must be present and must be strings
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
         409:
           description: Conflict. User with given email already exists
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
         500:
           description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+ 
+  
+  /Login:
+    post:
+      tags:
+      - "user"
+      summary: "Login a user"
+      description: ""
+      operationId: "login"
+      consumes:
+      - "application/json"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "body"
+        name: "authentication"
+        description: "auth details"
+        required: true
+        schema:
+          $ref: '#/definitions/Authentication'
+      
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/Token'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
         
-        
-  /loan:
+  /Loans/{id}:
+    get:
+      tags:
+      - "loan"
+      summary: "Get Loan by ID"
+      description: ""
+      operationId: "getLoanById"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "path"
+        name: "id"
+        type: integer
+        required: true
+      responses:
+        200:
+          description: OK
+          schema: 
+            $ref: '#/definitions/Loan'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        404:
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'        
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+    delete:
+      tags:
+      - "loan"
+      summary: "Delete Loan by ID"
+      description: ""
+      operationId: "deleteLoanById"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "path"
+        name: "id"
+        type: integer
+        required: true
+
+      responses:
+        204:
+          description: No Content
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+     
+            
+  /Loans:
+    get:
+      tags:
+      - "loan"
+      summary: "Get Loans"
+      description: ""
+      operationId: "getLoans"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "query"
+        name: "userId"
+        type: integer
+        required: false
+      - in: "query"
+        name: "state"
+        type: string
+        required: false
+      - in: "query"
+        name: "sort"
+        type: string
+        required: false
+      - in: "query"
+        name: "limit"
+        type: integer
+        required: false
+      - in: "query"
+        name: "page"
+        type: integer
+        required: false
+      
+      responses:
+        200:
+          description: OK
+          schema: 
+            type: array
+            items:
+              $ref: '#/definitions/Loan'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+      
     post:
       tags:
       - "loan"
@@ -62,15 +246,266 @@ paths:
       produces:
       - "application/json"
       parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
       - in: "body"
-        name: "body"
+        name: "loan"
         description: "Loan Object that needs to be added"
         required: true
         schema:
-          $ref: "#/definitions/Loan"
+          type: object
+          properties:
+            amount:
+              type: number
+              format: double
+            term:
+              type: integer
+              format: int
+            
       responses:
-        "405":
-          description: "Invalid input"
+        200:
+          description: OK
+          schema: 
+            type: array
+            items:
+              $ref: '#/definitions/Loan'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+  
+
+  
+  /Loans/{id}/Approve:  
+    patch:
+      tags:
+      - "loan"
+      summary: "Approve Loan"
+      description: ""
+      operationId: "approveLoan"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true      
+      - in: "path"
+        name: "id"
+        type: integer  
+        required: true
+
+      responses:
+        200:
+          description: OK
+          schema: 
+            $ref: '#/definitions/Loan'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        404:
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+            
+  /Installments/{id}:
+    get:
+      tags:
+      - "installment"
+      summary: "Get Installment by ID"
+      description: ""
+      operationId: "getInstallmentById"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "path"
+        name: "id"
+        type: integer
+        required: true
+      
+      responses:
+        200:
+          description: OK
+          schema: 
+            $ref: '#/definitions/Installment'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        404:
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'        
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+            
+    delete:
+      tags:
+      - "installment"
+      summary: "Delete Installment by ID"
+      description: ""
+      operationId: "deleteInstallmentById"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "path"
+        name: "id"
+        type: integer
+        required: true
+
+      responses:
+        204:
+          description: No Content
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+  /Installments:
+    get:
+      tags:
+      - "installment"
+      summary: "Get Installments"
+      description: ""
+      operationId: "getInstallments"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true
+      - in: "query"
+        name: "loanId"
+        type: integer
+        required: false
+      - in: "query"
+        name: "state"
+        type: string
+        required: false
+      - in: "query"
+        name: "sort"
+        type: string
+        required: false
+      - in: "query"
+        name: "limit"
+        type: integer
+        required: false
+      - in: "query"
+        name: "page"
+        type: integer
+        required: false      
+    
+      responses:
+        200:
+          description: OK
+          schema: 
+            type: array
+            items:
+              $ref: '#/definitions/Installment'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+
+  /Installments/{id}/Repay:
+    patch:
+      tags:
+      - "installment"
+      summary: "Repay Installment"
+      description: ""
+      operationId: "repayInstallment"
+      produces:
+      - "application/json"
+      parameters:
+      - in: "header"
+        name: "Token"
+        type: string
+        required: true      
+      - in: "path"
+        name: "id"
+        type: integer  
+        required: true
+      - in: "body"
+        name: "repaymentRequest"
+        schema:
+          $ref: '#/definitions/RepaymentRequest'
+        required: true
+
+      responses:
+        200:
+          description: OK
+          schema: 
+            $ref: '#/definitions/Installment'
+        400:
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        403:
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        404:
+          description: Not Found
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+        500:
+          description: Internal Server Error 
+          schema:
+            $ref: '#/definitions/ErrorResponse'
+
+                
+          
 definitions:
   Loan:
     type: object

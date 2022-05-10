@@ -383,3 +383,67 @@ func (siw *ServerInterfaceWrapper) Loans(w http.ResponseWriter, r *http.Request)
 
 	handler(w, r.WithContext(r.Context()))
 }
+
+func (siw *ServerInterfaceWrapper) DeleteLoan(w http.ResponseWriter, r *http.Request) {
+	ctx := siw.GetContext()
+	logger := ctx.GetLogger()
+
+	var id string
+
+	userRole := r.Context().Value(ContextRoleKey).(string)
+
+	if userRole == constants.RoleUser {
+		err := errors.New("User does not have admin access to delete")
+		errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	err := runtime.BindStyledParameter("simple", false, "id", chi.URLParam(r, "id"), &id)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	idInt, err := strconv.ParseInt(id, 10, 64)
+	if err != nil {
+		err = errors.New("ID not right format")
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	database := ctx.GetDB()
+
+	err = database.DeleteLoan(idInt)
+	if err != nil {
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		logger.Println(err)
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	var handler = func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	for _, middleware := range siw.HandlerMiddlewares {
+		handler = middleware(handler)
+	}
+
+	handler(w, r.WithContext(r.Context()))
+
+}

@@ -37,13 +37,15 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1"+"/Loans", wrapper.IsAuthorized(wrapper.AddLoan))
-	})
-	// r.Group(func(r chi.Router) {
-	// 	r.Delete(options.BaseURL+"/Loans/{id}", IsAuthorized(wrapper.DeleteLoan))
-	// })
-	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1"+"/Loans/{id}", wrapper.IsAuthorized(wrapper.LoanById))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1"+"/Loans", wrapper.IsAuthorized(wrapper.Loans))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1"+"/Loans", wrapper.IsAuthorized(wrapper.AddLoan))
 	})
 
 	r.Group(func(r chi.Router) {
@@ -51,16 +53,19 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/v1"+"/Loans", wrapper.IsAuthorized(wrapper.Loans))
+		r.Delete(options.BaseURL+"/Loans/{id}", wrapper.IsAuthorized(wrapper.DeleteLoan))
 	})
-	r.Group(func(r chi.Router) {
-		r.Post(options.BaseURL+"/v1"+"/Installments", wrapper.IsAuthorized(wrapper.AddInstallment))
-	})
-	// r.Group(func(r chi.Router) {
-	// 	r.Delete(options.BaseURL+"/Installments/{id}", IsAuthorized(wrapper.DeleteInstallment))
-	// })
+
 	r.Group(func(r chi.Router) {
 		r.Get(options.BaseURL+"/v1"+"/Installments/{id}", wrapper.IsAuthorized(wrapper.InstallmentById))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Get(options.BaseURL+"/v1"+"/Installments", wrapper.IsAuthorized(wrapper.Installments))
+	})
+
+	r.Group(func(r chi.Router) {
+		r.Post(options.BaseURL+"/v1"+"/Installments", wrapper.IsAuthorized(wrapper.AddInstallment))
 	})
 
 	r.Group(func(r chi.Router) {
@@ -68,11 +73,8 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Get(options.BaseURL+"/v1"+"/Installments", wrapper.IsAuthorized(wrapper.Installments))
+		r.Delete(options.BaseURL+"/Installments/{id}", wrapper.IsAuthorized(wrapper.DeleteInstallment))
 	})
 
-	// r.Group(func(r chi.Router) {
-	// 	r.Post(options.BaseURL+"/Loans/{id}", wrapper.AddLoanById)
-	// })
 	return r
 }
