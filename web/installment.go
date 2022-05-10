@@ -255,12 +255,19 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 		}
 		installment, err = database.FindInstallmentById(IdInt)
 		if err != nil {
-			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
-			logger.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(errorResponse)
-			return
+			if err == sql.ErrNoRows {
+				errorResponse := aerrors.New(aerrors.ErrNotFoundCode, aerrors.ErrNotFoundMessage, "")
+				w.WriteHeader(http.StatusNotFound)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
+				return
+			} else {
+				errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+				logger.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
+				w.Header().Set("Content-Type", "application/json")
+				json.NewEncoder(w).Encode(errorResponse)
+				return
 		}
 		if !util.Contains(loanIdsSlice, installment.LoanID) {
 			err = errors.New("User does not have access to the resource")
