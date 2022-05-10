@@ -167,19 +167,19 @@ Request parameters:
 
 ###### URL Parameters:
 
-**_userId_** : filter on User ID
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**_userId_** : filter on User ID
 
-**_state_**: filter on Loan state
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**_state_**: filter on Loan state
 
-**_sort_**: 
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**_sort_**: 
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_format_: field_name.order
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_format_: field_name.order
 
-&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_example_: createdOn.desc
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;_example_: createdOn.desc
 
-**_limit_**: limit number of results per page
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**_limit_**: limit number of results per page
 
-**_page_**: page number (starts from 1)
+&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;**_page_**: page number (starts from 1)
 
 Response:
 
