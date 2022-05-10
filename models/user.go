@@ -21,30 +21,29 @@ type User struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" sql:"created_on"`
+	CreatedOn strfmt.DateTime `json:"createdOn" sql:"created_on"`
 
 	// email
 	// Required: true
 	Email *string `json:"email"`
 
 	// id
-	// Required: true
-	ID *int64 `json:"id"`
+	ID int64 `json:"id"`
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" sql:"modified_on"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn" sql:"modified_on"`
 
 	// password
 	// Required: true
 	Password *string `json:"password"`
 
 	// role
-	Role string `json:"role,omitempty"`
+	// Required: true
+	Role *string `json:"role"`
 
 	// username
-	// Required: true
-	Username *string `json:"username"`
+	Username string `json:"username"`
 }
 
 // Validate validates this user
@@ -59,10 +58,6 @@ func (m *User) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateID(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateModifiedOn(formats); err != nil {
 		res = append(res, err)
 	}
@@ -71,7 +66,7 @@ func (m *User) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateUsername(formats); err != nil {
+	if err := m.validateRole(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,15 +97,6 @@ func (m *User) validateEmail(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *User) validateID(formats strfmt.Registry) error {
-
-	if err := validate.Required("id", "body", m.ID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *User) validateModifiedOn(formats strfmt.Registry) error {
 	if swag.IsZero(m.ModifiedOn) { // not required
 		return nil
@@ -132,9 +118,9 @@ func (m *User) validatePassword(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *User) validateUsername(formats strfmt.Registry) error {
+func (m *User) validateRole(formats strfmt.Registry) error {
 
-	if err := validate.Required("username", "body", m.Username); err != nil {
+	if err := validate.Required("role", "body", m.Role); err != nil {
 		return err
 	}
 

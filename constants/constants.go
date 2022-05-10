@@ -5,7 +5,7 @@ const (
 	LoanStatusApproved = "APPROVED"
 	LoanStatusRejected = "REJECTED"
 	LoanStatusPending  = "PENDING"
-	LoanStatusPaid
+	LoanStatusPaid     = "PAID"
 )
 
 //Installment Status

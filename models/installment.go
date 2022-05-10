@@ -21,7 +21,7 @@ type Installment struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" sql:"created_on"`
+	CreatedOn strfmt.DateTime `json:"createdOn" sql:"created_on"`
 
 	// due date
 	// Required: true
@@ -29,29 +29,30 @@ type Installment struct {
 	DueDate *strfmt.DateTime `json:"dueDate"`
 
 	// id
-	// Required: true
-	ID *int64 `json:"id"`
+	ID int64 `json:"id"`
 
 	// installment amount
 	// Required: true
+	// Minimum: 1
 	InstallmentAmount *float64 `json:"installmentAmount"`
 
 	// loan Id
-	LoanID int64 `json:"loanId,omitempty"`
+	LoanID int64 `json:"loanId"`
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" sql:"modified_on"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn" sql:"modified_on"`
 
 	// repayment amount
-	RepaymentAmount float64 `json:"repaymentAmount,omitempty"`
+	// Minimum: 0
+	RepaymentAmount *float64 `json:"repaymentAmount"`
 
 	// repayment time
 	// Format: date-time
-	RepaymentTime strfmt.DateTime `json:"repaymentTime,omitempty" sql:repayment_time"`
+	RepaymentTime strfmt.DateTime `json:"repaymentTime" sql:repayment_time"`
 
 	// state
-	State string `json:"state,omitempty"`
+	State string `json:"state"`
 }
 
 // Validate validates this installment
@@ -66,15 +67,15 @@ func (m *Installment) Validate(formats strfmt.Registry) error {
 		res = append(res, err)
 	}
 
-	if err := m.validateID(formats); err != nil {
-		res = append(res, err)
-	}
-
 	if err := m.validateInstallmentAmount(formats); err != nil {
 		res = append(res, err)
 	}
 
 	if err := m.validateModifiedOn(formats); err != nil {
+		res = append(res, err)
+	}
+
+	if err := m.validateRepaymentAmount(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -113,18 +114,13 @@ func (m *Installment) validateDueDate(formats strfmt.Registry) error {
 	return nil
 }
 
-func (m *Installment) validateID(formats strfmt.Registry) error {
-
-	if err := validate.Required("id", "body", m.ID); err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (m *Installment) validateInstallmentAmount(formats strfmt.Registry) error {
 
 	if err := validate.Required("installmentAmount", "body", m.InstallmentAmount); err != nil {
+		return err
+	}
+
+	if err := validate.Minimum("installmentAmount", "body", *m.InstallmentAmount, 1, false); err != nil {
 		return err
 	}
 
@@ -137,6 +133,18 @@ func (m *Installment) validateModifiedOn(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("modifiedOn", "body", "date-time", m.ModifiedOn.String(), formats); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (m *Installment) validateRepaymentAmount(formats strfmt.Registry) error {
+	if swag.IsZero(m.RepaymentAmount) { // not required
+		return nil
+	}
+
+	if err := validate.Minimum("repaymentAmount", "body", *m.RepaymentAmount, 0, false); err != nil {
 		return err
 	}
 

@@ -4,6 +4,7 @@ import (
 	"aspire/constants"
 	aerrors "aspire/errors"
 	"aspire/models"
+	"aspire/util"
 	"database/sql"
 	"encoding/json"
 	"errors"
@@ -11,6 +12,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/davecgh/go-spew/spew"
 	"github.com/deepmap/oapi-codegen/pkg/runtime"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-openapi/strfmt"
@@ -48,7 +50,7 @@ func (siw *ServerInterfaceWrapper) InstallmentById(w http.ResponseWriter, r *htt
 
 	database := ctx.GetDB()
 
-	installment, err := database.FindLoanById(idInt)
+	installment, err := database.FindInstallmentById(idInt)
 	if err != nil {
 		if err == sql.ErrNoRows {
 			errorResponse := aerrors.New(aerrors.ErrNotFoundCode, aerrors.ErrNotFoundMessage, "")
@@ -186,7 +188,8 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 	logger := ctx.GetLogger()
 	database := ctx.GetDB()
 
-	repaymentRequest := models.RepaymentRequest{}
+	repaymentRequest := &models.RepaymentRequest{}
+	installment := &models.Installment{}
 
 	logger.Println("In Find Server By id")
 
@@ -214,6 +217,52 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 
 	}
 
+	userRole := r.Context().Value(ContextRoleKey).(string)
+	userId := r.Context().Value(ContextUserIdKey).(string)
+
+	loanIdsSlice := []int64{}
+	if userRole == constants.RoleUser {
+		userIdInt, err := strconv.ParseInt(userId, 10, 64)
+		if err != nil {
+			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: user Id not in correct format")
+			logger.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+		}
+
+		loanIdsSlice, err = database.FindLoanIdsForUser(userIdInt)
+		if err != nil {
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+		}
+		installment, err = database.FindInstallmentById(IdInt)
+		if err != nil {
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+		}
+		if !util.Contains(loanIdsSlice, installment.LoanID) {
+			err = errors.New("User does not have access to the resource")
+			errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+			logger.Println(err)
+			w.WriteHeader(http.StatusBadRequest)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+
+		}
+
+	}
+
 	reqBody, err := ioutil.ReadAll(r.Body)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
@@ -233,7 +282,18 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 		return
 	}
 
-	err = database.RepayInstallment(IdInt, *repaymentRequest.RepaymentAmount)
+	spew.Dump(repaymentRequest)
+
+	if repaymentRequest.RepaymentAmount == nil {
+		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: No repaymentAmount in request body	")
+		logger.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
+	}
+
+	installment, err = database.FindInstallmentById(IdInt)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 		logger.Println(err)
@@ -243,10 +303,22 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 		return
 	}
 
+	if installment.State != constants.InstallmentStatusPaid {
+		installment, err = database.RepayInstallment(IdInt, *repaymentRequest.RepaymentAmount, loanIdsSlice)
+		if err != nil {
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+			logger.Println(err)
+			w.WriteHeader(http.StatusInternalServerError)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
+			return
+		}
+	}
+
 	var handler = func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(""); err != nil {
+		if err := json.NewEncoder(w).Encode(installment); err != nil {
 			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request")
 			logger.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
@@ -263,7 +335,7 @@ func (siw *ServerInterfaceWrapper) RepayInstallment(w http.ResponseWriter, r *ht
 	handler(w, r.WithContext(r.Context()))
 }
 
-func (siw *ServerInterfaceWrapper) FindInstallments(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) Installments(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
 
@@ -276,7 +348,7 @@ func (siw *ServerInterfaceWrapper) FindInstallments(w http.ResponseWriter, r *ht
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params models.FindInstallmentsParams
+	var params FindInstallmentsParams
 
 	// ------------- Optional query parameter "userId" -------------
 
@@ -331,56 +403,41 @@ func (siw *ServerInterfaceWrapper) FindInstallments(w http.ResponseWriter, r *ht
 	}
 
 	userRole := r.Context().Value(ContextRoleKey).(string)
+	userId := r.Context().Value(ContextUserIdKey).(string)
 
-	var loanIdInt int64
+	loanIdsSlice := []int64{}
 
-	if userRole == constants.RoleUser && params.LoanID == "" {
-		errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: invalid param loanId")
-		logger.Println(err)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Header().Set("Content-Type", "application/json")
-		json.NewEncoder(w).Encode(errorResponse)
-		return
-	}
-
-	if params.LoanID != "" {
-		loanIdInt, err = strconv.ParseInt(params.LoanID, 10, 64)
+	//If user role is user, then get list of accesible loanIds for the user
+	if userRole == constants.RoleUser {
+		userIdInt, err := strconv.ParseInt(userId, 10, 64)
 		if err != nil {
-			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: invalid param loanId")
+			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: user Id not in correct format")
 			logger.Println(err)
 			w.WriteHeader(http.StatusBadRequest)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
-	}
 
-	var limit, page int64
-
-	if params.Limit != "" {
-		if params.Page != "" {
-			limit, err = strconv.ParseInt(params.Limit, 10, 64)
-			if err != nil {
-				errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: param limit malformed")
-				logger.Println(err)
-				w.WriteHeader(http.StatusBadRequest)
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
-		} else {
-			err = errors.New("Cannot have limit wothout page")
-			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
+		loanIdsSlice, err = database.FindLoanIdsForUser(userIdInt)
+		if err != nil {
+			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 			logger.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
+			w.WriteHeader(http.StatusInternalServerError)
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
-		page, err = strconv.ParseInt(params.Page, 10, 64)
+
 	}
 
-	installments, err = database.FindInstallments(loanIdInt, params.State, params.Sort, limit, page)
+	if params.Limit != nil && params.Page == nil {
+		page := int64(1)
+		params.Page = &page
+
+	}
+
+	installments, err = database.FindInstallments(params.LoanID, params.State, params.Sort, params.Limit, params.Page, loanIdsSlice)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 		logger.Println(err)

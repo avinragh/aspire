@@ -23,6 +23,7 @@ CREATE TABLE IF NOT EXISTS loans (
     created_on TIMESTAMP,
     modified_on TIMESTAMP,
     user_id INT,
+    installments_created BOOLEAN,
     CONSTRAINT fk_user
         FOREIGN KEY(user_id)
             REFERENCES users(id)
@@ -32,11 +33,11 @@ CREATE TABLE IF NOT EXISTS loans (
 CREATE TABLE IF NOT EXISTS installments (
     id SERIAL PRIMARY KEY,
     installment_amount DECIMAL NOT NULL,
-    repayment_amount DECIMAL,
+    repayment_amount DECIMAL NOT NULL,
     due_date TIMESTAMP,
     state VARCHAR(10),
     loan_id INT,
-    repaymentDate TIMESTAMP,
+    repayment_time TIMESTAMP,
     created_on TIMESTAMP,
     modified_on TIMESTAMP,
     CONSTRAINT fk_loan

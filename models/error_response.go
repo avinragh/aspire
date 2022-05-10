@@ -18,13 +18,13 @@ import (
 type ErrorResponse struct {
 
 	// code
-	Code string `json:"code,omitempty"`
+	Code string `json:"code"`
 
 	// detail
-	Detail string `json:"detail,omitempty"`
+	Detail string `json:"detail"`
 
 	// message
-	Message string `json:"message,omitempty"`
+	Message string `json:"message"`
 }
 
 // Validate validates this error response

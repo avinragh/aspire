@@ -25,32 +25,34 @@ type Loan struct {
 
 	// created on
 	// Format: date-time
-	CreatedOn strfmt.DateTime `json:"createdOn,omitempty" json:"created_on"`
+	CreatedOn strfmt.DateTime `json:"createdOn" sql:"created_on"`
 
 	// currency
-	Currency string `json:"currency,omitempty"`
+	Currency string `json:"currency"`
 
 	// id
-	// Required: true
-	ID *int64 `json:"id"`
+	ID int64 `json:"id"`
+
+	// installments created
+	InstallmentsCreated *bool `json:"installmentsCreated" sql:"installments_created"`
 
 	// modified on
 	// Format: date-time
-	ModifiedOn strfmt.DateTime `json:"modifiedOn,omitempty" json:"modified_on"`
+	ModifiedOn strfmt.DateTime `json:"modifiedOn" sql:"modified_on"`
 
 	// start date
 	// Format: date-time
-	StartDate strfmt.DateTime `json:"startDate,omitempty" json:"start_date"`
+	StartDate strfmt.DateTime `json:"startDate" sql:"start_date"`
 
 	// state
-	State string `json:"state,omitempty"`
+	State string `json:"state"`
 
 	// term
 	// Required: true
 	Term *int64 `json:"term"`
 
 	// user Id
-	UserID int64 `json:"userId,omitempty" json:"user_id"`
+	UserID int64 `json:"userId" sql:"user_id"`
 }
 
 // Validate validates this loan
@@ -62,10 +64,6 @@ func (m *Loan) Validate(formats strfmt.Registry) error {
 	}
 
 	if err := m.validateCreatedOn(formats); err != nil {
-		res = append(res, err)
-	}
-
-	if err := m.validateID(formats); err != nil {
 		res = append(res, err)
 	}
 
@@ -102,15 +100,6 @@ func (m *Loan) validateCreatedOn(formats strfmt.Registry) error {
 	}
 
 	if err := validate.FormatOf("createdOn", "body", "date-time", m.CreatedOn.String(), formats); err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func (m *Loan) validateID(formats strfmt.Registry) error {
-
-	if err := validate.Required("id", "body", m.ID); err != nil {
 		return err
 	}
 

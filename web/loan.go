@@ -185,8 +185,9 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 
 	var handler = func(w http.ResponseWriter, r *http.Request) {}
 
+	loan := &models.Loan{}
 	if userRole == constants.RoleAdmin {
-		loan, err := database.FindLoanById(idInt)
+		loan, err = database.FindLoanById(idInt)
 		if err != nil {
 			if err == sql.ErrNoRows {
 				errorResponse := aerrors.New(aerrors.ErrNotFoundCode, aerrors.ErrNotFoundMessage, "")
@@ -205,7 +206,7 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 		}
 
 		if loan.State == constants.LoanStatusPending {
-			err = database.ApproveLoan(idInt)
+			loan, err = database.ApproveLoan(idInt)
 			if err != nil {
 				errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 				logger.Println(err)
@@ -214,20 +215,21 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 				json.NewEncoder(w).Encode(errorResponse)
 				return
 			}
+		}
 
-			handler = func(w http.ResponseWriter, r *http.Request) {
+		handler = func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(http.StatusOK)
+			if err := json.NewEncoder(w).Encode(loan); err != nil {
+				errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+				logger.Println(err)
+				w.WriteHeader(http.StatusInternalServerError)
 				w.Header().Set("Content-Type", "application/json")
-				w.WriteHeader(http.StatusOK)
-				if err := json.NewEncoder(w).Encode(loan); err != nil {
-					errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
-					logger.Println(err)
-					w.WriteHeader(http.StatusInternalServerError)
-					w.Header().Set("Content-Type", "application/json")
-					json.NewEncoder(w).Encode(errorResponse)
-					return
+				json.NewEncoder(w).Encode(errorResponse)
+				return
 
-				}
 			}
+
 		}
 
 	} else {
@@ -249,7 +251,7 @@ func (siw *ServerInterfaceWrapper) ApproveLoan(w http.ResponseWriter, r *http.Re
 
 }
 
-func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Request) {
+func (siw *ServerInterfaceWrapper) Loans(w http.ResponseWriter, r *http.Request) {
 
 	ctx := siw.GetContext()
 
@@ -262,7 +264,7 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 	var err error
 
 	// Parameter object where we will unmarshal all parameters from the context
-	var params models.FindLoansParams
+	var params FindLoansParams
 
 	// -------------  query parameters -------------
 
@@ -322,16 +324,8 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 	var userIdInt int64
 
 	if userRole == constants.RoleAdmin {
-		if params.UserID != "" {
-			userIdInt, err = strconv.ParseInt(params.UserID, 10, 64)
-			if err != nil {
-				errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: user Id not in correct format")
-				logger.Println(err)
-				w.WriteHeader(http.StatusBadRequest)
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
+		if params.UserID != nil {
+			userIdInt = *params.UserID
 		}
 	} else if userRole == constants.RoleUser {
 		userIdInt, err = strconv.ParseInt(userId, 10, 64)
@@ -343,36 +337,18 @@ func (siw *ServerInterfaceWrapper) FindLoans(w http.ResponseWriter, r *http.Requ
 			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
+
 	}
 
-	var limit, page int64
+	if params.Limit != nil && params.Page == nil {
+		page := int64(1)
+		params.Page = &page
 
-	if params.Limit != "" {
-		if params.Page != "" {
-			limit, err = strconv.ParseInt(params.Limit, 10, 64)
-			if err != nil {
-				errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, "Bad Request: limit not in correct format")
-				logger.Println(err)
-				w.WriteHeader(http.StatusBadRequest)
-				w.Header().Set("Content-Type", "application/json")
-				json.NewEncoder(w).Encode(errorResponse)
-				return
-			}
-		} else {
-			err = errors.New("Cannot have limit wothout page")
-			errorResponse := aerrors.New(aerrors.ErrInputValidationCode, aerrors.ErrInputValidationMessage, err.Error())
-			logger.Println(err)
-			w.WriteHeader(http.StatusBadRequest)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(errorResponse)
-			return
-		}
-		page, err = strconv.ParseInt(params.Page, 10, 64)
 	}
 
-	loans, err = database.FindLoans(userIdInt, params.State, params.Sort, limit, page)
+	loans, err = database.FindLoans(userIdInt, params.State, params.Sort, params.Limit, params.Page)
 	if err != nil {
-		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
+		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, err.Error())
 		logger.Println(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Header().Set("Content-Type", "application/json")

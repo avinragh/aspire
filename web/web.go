@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"aspire/context"
+	aerrors "aspire/errors"
 
 	packcontext "context"
 
@@ -24,17 +25,20 @@ const (
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
-	// (GET /Loans)
-	LoanById(w http.ResponseWriter, r *http.Request)
+	// (GET /Loans/id)
+	LoanById(w http.ResponseWriter, r *http.Request, id string)
 
 	// (POST /Loans)
-	AddLoan(w http.ResponseWriter, r *http.Request)
+	AddLoan(w http.ResponseWriter, r *http.Request, id string)
 
 	// (POST /Signup)
 	Signup(w http.ResponseWriter, r *http.Request)
 
 	// (POST /Login)
 	Login(w http.ResponseWriter, r *http.Request)
+
+	// (GET /Loans)
+	Loans(w http.ResponseWriter, r *http.Request, params FindLoansParams)
 }
 
 // ServerInterfaceWrapper converts contexts to parameters.
@@ -76,14 +80,20 @@ func HandlerFromMuxWithBaseURL(ctx *context.Context, si ServerInterface, r chi.R
 	})
 }
 
-func IsAuthorized(next http.HandlerFunc) http.HandlerFunc {
+func (siw *ServerInterfaceWrapper) IsAuthorized(next http.HandlerFunc) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
+		ctx := siw.GetContext()
+		logger := ctx.GetLogger()
 
 		spew.Dump("Middleware Operating")
 
 		if r.Header["Token"] == nil {
 			err := errors.New("No Token Found")
-			json.NewEncoder(w).Encode(err)
+			errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+			logger.Println(err)
+			w.WriteHeader(http.StatusForbidden)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -98,7 +108,11 @@ func IsAuthorized(next http.HandlerFunc) http.HandlerFunc {
 
 		if err != nil {
 			err = errors.New("Your Token has been expired")
-			json.NewEncoder(w).Encode(err)
+			errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+			logger.Println(err)
+			w.WriteHeader(http.StatusForbidden)
+			w.Header().Set("Content-Type", "application/json")
+			json.NewEncoder(w).Encode(errorResponse)
 			return
 		}
 
@@ -114,7 +128,12 @@ func IsAuthorized(next http.HandlerFunc) http.HandlerFunc {
 
 		}
 		err = errors.New("Not Authorized")
-		json.NewEncoder(w).Encode(err)
+		errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
 
 	}
 }

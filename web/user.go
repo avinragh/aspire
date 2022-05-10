@@ -74,16 +74,10 @@ func (siw *ServerInterfaceWrapper) Signup(w http.ResponseWriter, r *http.Request
 			w.Header().Set("Content-Type", "application/json")
 			json.NewEncoder(w).Encode(errorResponse)
 			return
-		} else {
-			errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
-			logger.Println(err)
-			w.WriteHeader(http.StatusInternalServerError)
-			w.Header().Set("Content-Type", "application/json")
-			json.NewEncoder(w).Encode(errorResponse)
-			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(user)
+		return
 
 	}
 	err = errors.New("Email already in use")
@@ -146,7 +140,7 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	validToken, err := GenerateJWT(*user.ID, user.Role)
+	validToken, err := GenerateJWT(user.ID, *user.Role)
 	if err != nil {
 		errorResponse := aerrors.New(aerrors.ErrInternalServerCode, aerrors.ErrInternalServerMessage, "")
 		logger.Println(err)
@@ -158,7 +152,7 @@ func (siw *ServerInterfaceWrapper) Login(w http.ResponseWriter, r *http.Request)
 
 	var token models.Token
 	token.Email = user.Email
-	token.Role = user.Role
+	token.Role = *user.Role
 	token.TokenString = &validToken
 	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(token)

@@ -15,7 +15,7 @@ func TestFindUserByEmail(t *testing.T) {
 	if err != nil {
 		t.Errorf("Not able to connect to db")
 	}
-	user := &models.User{Username: util.GetStringPointer("avinragh"), Password: util.GetStringPointer("Siri2109!"), Role: "admin", Email: util.GetStringPointer("avinragh@gmail.com")}
+	user := &models.User{Username: "avinragh", Password: util.GetStringPointer("Siri2109!"), Role: util.GetStringPointer("admin"), Email: util.GetStringPointer("avinragh@gmail.com")}
 	user, err = db.AddUser(user)
 	if err != nil {
 		t.Errorf("Not able to Add user to db for testing")
@@ -41,7 +41,7 @@ func TestFindUserByEmail(t *testing.T) {
 	})
 
 	// teardown
-	db.DeleteUser(*user.ID)
+	db.DeleteUser(user.ID)
 	db.Close()
 }
 
@@ -51,8 +51,8 @@ func TestAddUser(t *testing.T) {
 	if err != nil {
 		t.Errorf("Not able to connect to db")
 	}
-	user := &models.User{Username: util.GetStringPointer("avinragh"), Password: util.GetStringPointer("Siri2109!"), Role: "admin", Email: util.GetStringPointer("avinragh@gmail.com")}
-	failUser := &models.User{Role: "admin", Email: util.GetStringPointer("bob@gmail.com")}
+	user := &models.User{Username: "avinragh", Password: util.GetStringPointer("Siri2109!"), Role: util.GetStringPointer("admin"), Email: util.GetStringPointer("avinragh@gmail.com")}
+	failUser := &models.User{Role: util.GetStringPointer("admin"), Email: util.GetStringPointer("bob@gmail.com")}
 	//test cases
 	t.Run("SUCCESS", func(t *testing.T) {
 		got, err := db.AddUser(user)
@@ -84,7 +84,7 @@ func TestAddUser(t *testing.T) {
 	if err != nil {
 		t.Errorf("Unable to teardown AddUserSetup")
 	}
-	db.DeleteUser(*user.ID)
+	db.DeleteUser(user.ID)
 	db.Close()
 
 }
@@ -95,7 +95,7 @@ func TestDeleteUser(t *testing.T) {
 	if err != nil {
 		t.Errorf("Not able to connect to db")
 	}
-	user := &models.User{Username: util.GetStringPointer("avinragh"), Password: util.GetStringPointer("Siri2109!"), Role: "admin", Email: util.GetStringPointer("avinragh@gmail.com")}
+	user := &models.User{Username: "avinragh", Password: util.GetStringPointer("Siri2109!"), Role: util.GetStringPointer("admin"), Email: util.GetStringPointer("avinragh@gmail.com")}
 	user, err = db.AddUser(user)
 	if err != nil {
 		t.Errorf("Not able to Add user to db for testing")
@@ -103,7 +103,7 @@ func TestDeleteUser(t *testing.T) {
 
 	//run tests
 	t.Run("SUCCESS", func(t *testing.T) {
-		err := db.DeleteUser(*user.ID)
+		err := db.DeleteUser(user.ID)
 		if err != nil {
 			t.Errorf("Not able to Find user: %s", err.Error())
 		}

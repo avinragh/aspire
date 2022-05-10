@@ -24,7 +24,7 @@ type Token struct {
 	Email *string `json:"email"`
 
 	// role
-	Role string `json:"role,omitempty"`
+	Role string `json:"role"`
 
 	// token string
 	// Required: true
