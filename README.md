@@ -32,6 +32,7 @@ Avinash Raghunathan
   * [1.5. Installment APIs]()
     * [1.5.1. API - GET /v1/Installments/{id}]()
     * [1.5.2. API - GET /v1/Installments]()
+    * [1.5.3. API - POST /v1/Installments]()
     * [1.5.4. API - PATCH /v1/Installments/{id}/Repay]()
 
 **[2. Crons](#heading--2)**
