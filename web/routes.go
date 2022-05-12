@@ -3,9 +3,27 @@ package web
 import (
 	"aspire/context"
 	"net/http"
+	"os"
+	"path/filepath"
 
 	"github.com/go-chi/chi/v5"
 )
+
+func FileServer(router chi.Router) {
+	workDir, _ := os.Getwd()
+	filesDir := http.Dir(filepath.Join(workDir, "static"))
+
+	fs := http.FileServer(http.Dir(filesDir))
+
+	router.Get("/*", func(w http.ResponseWriter, r *http.Request) {
+		if _, err := os.Stat(string(filesDir) + r.RequestURI); os.IsNotExist(err) {
+			http.StripPrefix(r.RequestURI, fs).ServeHTTP(w, r)
+		} else {
+			fs.ServeHTTP(w, r)
+		}
+	})
+
+}
 
 // HandlerWithOptions creates http.Handler with additional options
 func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiServerOptions) http.Handler {
@@ -27,6 +45,8 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	// r.Group(func(r chi.Router) {
 	// 	r.Get(options.BaseURL+"/Loans", wrapper.FindLoans)
 	// })
+
+	FileServer(r)
 
 	r.Group(func(r chi.Router) {
 		r.Post(options.BaseURL+"/v1"+"/Signup", wrapper.Signup)
@@ -73,8 +93,9 @@ func HandlerWithOptions(ctx *context.Context, si ServerInterface, options ChiSer
 	})
 
 	r.Group(func(r chi.Router) {
-		r.Delete(options.BaseURL+"/Installments/{id}", wrapper.IsAuthorized(wrapper.DeleteInstallment))
+		r.Delete(options.BaseURL+"/v1"+"/Installments/{id}", wrapper.IsAuthorized(wrapper.DeleteInstallment))
 	})
 
 	return r
+
 }
