@@ -13,6 +13,7 @@ Avinash Raghunathan
 * JWT Authentication for users
 * Cron jobs for calculating 
 * Filter, Sort and Pagination Support
+* API DOCS on root page.
 
 ## Content
 
@@ -33,6 +34,8 @@ Avinash Raghunathan
     * [1.5.2. API - GET /v1/Installments](#heading--1-5-2)
     * [1.5.3. API - POST /v1/Installments](#heading--1-5-3)
     * [1.5.4. API - PATCH /v1/Installments/{id}/Repay](#heading--1-5-4)
+  * [1.6. Swagger API documentation](#heading--1.6)
+  
 
 **[2. Crons](#heading--2)**
 
@@ -571,6 +574,11 @@ Error Responses:
 <br/>
 
 <div id="heading--2"/>
+
+### Swagger API documentation
+
+The home page serves the API documentation generated with help of the swagger spec. Users can reference the same for help with accesing the APIs.
+
 
 ## Crons
 
