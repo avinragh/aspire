@@ -1,8 +1,9 @@
 package web
 
 import (
-	"fmt"
-	"log"
+	aerrors "aspire/errors"
+	"encoding/json"
+	"errors"
 	"net/http"
 )
 
@@ -12,12 +13,19 @@ func (siw *ServerInterfaceWrapper) HealthCheck(w http.ResponseWriter, r *http.Re
 
 	database := ctx.GetDB()
 
+	logger := ctx.GetLogger()
+
 	err := database.Ping()
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Could not connect to DB: %s", err), http.StatusInternalServerError)
+		err := errors.New("Could not onnect to Database")
+		errorResponse := aerrors.New(aerrors.ErrForbiddenCode, aerrors.ErrForbiddenMessage, err.Error())
+		logger.Println(err)
+		w.WriteHeader(http.StatusForbidden)
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(errorResponse)
+		return
 	}
-	log.Println("Database connection established")
+	logger.Println("Database connection established")
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte("ok"))
 }
