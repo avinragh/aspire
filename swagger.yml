@@ -18,7 +18,6 @@ tags:
 - name: "installment"
   description: "Everything to do with Installments"
 schemes:
-- "https"
 - "http"
 paths:
   /Signup:

@@ -42,15 +42,21 @@ Avinash Raghunathan
   * [2.1. Insert Installments](#heading--2-1)
   * [2.2. Update Paid Loans](#heading--2-2) 
 
-**[3.Run Environment and Dependencies](#heading--3)**
+**[3. Run Environment and Dependencies](#heading--3)**
+ 
   * [3.1. Database](#heading--3-1)
   * [3.2. Models](#heading--3-2)
   * [3.3. Crons](#heading--3-3)
   * [3.4. Unit Tests](#heading--3-4)
 
+**[4. Design](#heading--4)**
+  * [4.1 Database](#heading--4-1)
+  * [4.2 Approval API and Repay API](#heading--4-2)
+  * [4.3 Installment calculation and Loan Paid Updation as crons](#heading--4-3)
+  * [4.4 User Roles](#heading--4-4)
 
 
-
+  
 <div id="heading--1"/>
 
 ## Usage
@@ -58,7 +64,7 @@ Avinash Raghunathan
 <div id="heading--1-1"/>
 
 ### Run Tests and Start Server
-
+<p>
 ```bash
 docker-compose up
 ```
@@ -70,13 +76,14 @@ docker-compose up -d
 ```bash
 docker-compose logs aspire-server
 ```
+</p>
 <br/>
 
 <div id="heading--1-2"/>
 
 ### Error Response
 
-All API Errors are returned in a single format and with the appropriate HTTP Status.
+<p>All API Errors are returned in a single format and with the appropriate HTTP Status.
 The format for the ErrorResponse is:
 
 ```json
@@ -86,6 +93,7 @@ The format for the ErrorResponse is:
     "detail": "<string| Specific detail on the error if any else empty string" 
 }
 ```
+</p>
 <br/>
 
 <div id="heading--1-3"/>
@@ -96,7 +104,7 @@ The format for the ErrorResponse is:
 
 #### API -  POST /v1/Signup
 
-Request:
+<p>Request:
 
 ```json
 {
@@ -173,7 +181,7 @@ ErrorResponses:
 <br/>
 
 All consequent requests need to be sent with the Header **Token** and Value = _tokenString_
-
+</p>
 <br/>
 
 <div id="heading--1-4"/>
@@ -184,7 +192,7 @@ All consequent requests need to be sent with the Header **Token** and Value = _t
 
 #### API - GET /v1/Loans/{id}
 
-Response:
+<p>Response:
 
 Status: 200 OK
 ```json
@@ -201,7 +209,6 @@ Status: 200 OK
     "userId": 8 //Integer
 }
 ```
-
 Error Responses:
 
 - ##### 400 Bad Request:
@@ -220,13 +227,13 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-4-2"/>
 
 #### API - GET /v1/Loans
 
-Request parameters:
+<p>Request parameters:
 
 ###### URL Parameters:
 
@@ -282,13 +289,13 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-4-3"/>
 
 #### API - POST /v1/Loans
 
-Request:
+<p>Request:
 
 ###### Request Body:
 ```json
@@ -330,13 +337,13 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-4-4"/>
 
 #### API - PATCH /v1/Loans/{id}/Approve
 
-User must be Admin
+<p>User must be Admin
 
 Response:
 ```json
@@ -372,7 +379,7 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-5"/>
 
@@ -382,7 +389,7 @@ Error Responses:
 
 #### API - GET /v1/Installments/{id}
 
-Response:
+<p>Response:
 ```json
 {
     "createdOn": "<timestamp|2022-05-10T12:36:00.031Z",
@@ -415,13 +422,13 @@ ErrorResponses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-5-2"/>
 
 #### API - GET /v1/Installments
 
-Request parameters:
+<p>Request parameters:
 
 ###### URL Parameters:
 
@@ -475,13 +482,13 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-5-3"/>
 
 #### POST /v1/Installments
 
-Request:
+<p>Request:
 
 Only if Admin
 
@@ -522,13 +529,13 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
 <div id="heading--1-5-4"/>
 
 #### PATCH /v1/Installments/{id}/Repay
 
-Repayment can be done only once. Subsequent request to the same installment will not cause any change.
+<p>Repayment can be done only once. Subsequent request to the same installment will not cause any change.
 
 Request:
 ```json
@@ -571,14 +578,15 @@ Error Responses:
 
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;- Error when there is an error in the system
 
-<br/>
+</p><br/>
 
-<div id="heading--2"/>
+<div id="heading--1.6"/>
 
 ### Swagger API documentation
 
-The home page serves the API documentation generated with help of the swagger spec. Users can reference the same for help with accesing the APIs.
+<p>The home page serves the API documentation generated with help of the swagger spec. Users can reference the same for help with accesing the APIs.</p>
 
+<div id="heading--2"/>
 
 ## Crons
 
@@ -588,13 +596,13 @@ There are 2 crons that run every minute:
 
 ### Insert Installments:
 
-Calculates the repayment schedule and inserts it into the DB once loan is approved
+<p>Calculates the repayment schedule and inserts it into the DB once loan is approved</p>
 
 <div id="heading--2-2"/>
 
 ### Update Paid Loans:
 
-Checks Installments and Updates loans that are paid
+<p>Checks Installments and Updates loans that are paid</p>
 
 <div id="heading--3"/>
 
@@ -604,7 +612,7 @@ Checks Installments and Updates loans that are paid
 
 ### Database
 
-The app uses PostgreSQL for its database needs.
+<p>The app uses PostgreSQL for its database needs.
 
 **Credentials**:
 
@@ -615,23 +623,76 @@ DB_DATABASE = "aspire"
 DB_PORT = "5432"
 ```
 
+</p>
 <div id="heading--3-2"/>
 
 ### Models
 
-The app uses swagger to generate the models that are used within the app
+<p>The app uses swagger to generate the models that are used within the app</p>
 
 <div id="heading--3-3"/>
 
 ### Crons
 
-The app uses the Golang package [robfig/cron/v3](https://github.com/robfig/cron) for its cron operations
+<p>The app uses the Golang package [robfig/cron/v3](https://github.com/robfig/cron) for its cron operations</p>
 
 <div id="heading--3-4"/>
 
 ### Unit Tests
 
-The app uses the Golang package [stretchr/testify](https://github.com/stretchr/testify) for unit test assertions
+<p>The app uses the Golang package [stretchr/testify](https://github.com/stretchr/testify) for unit test assertions</p>
+
+<div id="heading--4"/>
+
+## Design
+
+This section highlights a few design decisions and explains why they were taken:
+
+<div id="heading--4-1"/>
+
+### Database 
+
+<p>The following 3 main models are used within the app:
+
+- User
+- Loan
+- Installment
+
+These are the relationships that exist:
+
+- A loan belongs to a User
+- An Installment (Repayment) belongs to a Loan
+
+Since there are relations existing within the models and entities like loans are very transactional in nature, I decided to go with a relational database.
+Hence, PostgreSQL was selected as the DB of choice.</p>
+
+<div id="heading--4-2"/>
+
+### Approval API and Repay API
+
+<p>For the Approval and Repay APIs I decided to go with Patch APIs. By convention, PUT is a method of modifying resource where the client sends data that updates the entire resource. Both Approval and Repay APIs were such that only focused partial updates were required. Hence, it made more sense and the API more meaningful to have PATCH requests for the operations.</p>
+
+<div id="heading--4-3"/>
+
+### Installment calculation and Loan Paid Updation as crons
+
+<p>The repayment schedule calculation is a user agnostic task which is done by the system and does not require APIs to be exposed to the end user. Also, the calculations need to be done only once a Loan is approved. For this reason, I decided to go with a cron task to check for Approved loans and add Installments(Repayments) on to the DB. Since, the app is cloud native, I have added a field installmentsCreated to the model so that this operation is done only once.
+
+The updation of loans to Paid status is also a user agnostic task and need be done only when all the installments are paid. Hence this is also written out as a cron task and checks for the status of the installment.
+
+In a full production system, where theres huge traffic, the trigger for these crons would have been notifications from the db operations of update. But, to maintain the simplicity of the app I did not go as far as to enable this. I rely on simple scheduled crons that run by checking relevant flags/fields within the DB. </p>
+
+<div id="heading--4-4"/>
+
+### User Roles
+
+<p>The user can signup to the app with the following 2 roles
+- admin
+- user
+
+The user has access to only their own loans and installments while the admin has access to the entire system.
+The Approve API is an admin only API and cannot be performed by a user with user role access.</p>
+
 
 
 
